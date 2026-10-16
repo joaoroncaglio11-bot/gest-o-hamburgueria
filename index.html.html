@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Financeira - Hamburgueria</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans pb-10">
+
+    <header class="bg-red-600 text-white p-6 shadow-lg">
+        <h1 class="text-3xl font-bold text-center">Dashboard da Hamburgueria</h1>
+    </header>
+
+    <main class="max-w-6xl mx-auto mt-8 px-4">
+        
+        <!-- Configurações e Upload -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Configurações Iniciais</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium">Taxa da Máquina de Cartão (Fixa)</label>
+                        <input type="text" value="4,89%" disabled class="w-full mt-1 p-2 border rounded border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Upload Relatório PedeApp (Excel/CSV)</h2>
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="w-full p-2 border border-dashed rounded text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+            </div>
+        </section>
+
+        <!-- KPI Cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+                <p class="text-sm text-gray-500">Total Vendas</p>
+                <h3 class="text-2xl font-bold" id="totalSales">R$ 0,00</h3>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
+                <p class="text-sm text-gray-500">Taxas Cartão</p>
+                <h3 class="text-2xl font-bold" id="totalFees">R$ 0,00</h3>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500">
+                <p class="text-sm text-gray-500">Total Custos</p>
+                <h3 class="text-2xl font-bold" id="totalCosts">R$ 0,00</h3>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-500">
+                <p class="text-sm text-gray-500">Lucro Líquido</p>
+                <h3 class="text-2xl font-bold" id="netProfit">R$ 0,00</h3>
+            </div>
+        </section>
+
+        <!-- Gráficos e Lançamento de Custos -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Distribuição de Custos</h2>
+                <div class="h-64 flex justify-center">
+                    <canvas id="costsChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Lançar Novo Custo</h2>
+                <form id="costForm" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium">Descrição (ex: Salário João, Diária Motoboy)</label>
+                            <input type="text" id="costDesc" required class="w-full mt-1 p-2 border rounded border-gray-300">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Valor (R$)</label>
+                            <input type="number" step="0.01" id="costValue" required class="w-full mt-1 p-2 border rounded border-gray-300">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">Categoria</label>
+                        <select id="costCategory" class="w-full mt-1 p-2 border rounded border-gray-300">
+                            <option value="Insumos">Insumos</option>
+                            <option value="Embalagens">Embalagens</option>
+                            <option value="Funcionário">Funcionário</option>
+                            <option value="Motoboy">Motoboy</option>
+                            <option value="Aluguel">Aluguel</option>
+                            <option value="Gás">Gás</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-red-600 text-white p-2 rounded hover:bg-red-700 transition font-semibold">Adicionar Custo</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Tabela de Custos -->
+        <section class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Histórico de Custos</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="p-3 border">Descrição</th>
+                            <th class="p-3 border">Categoria</th>
+                            <th class="p-3 border">Valor</th>
+                            <th class="p-3 border">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="costTableBody">
+                        <!-- Custos cadastrados aparecem aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let costs = JSON.parse(localStorage.getItem('hamburgueriaCosts')) || [];
+        let uploadedSalesData = [];
+        let costsChartInstance = null;
+
+        // Formatação de moeda
+        const formatCurrency = (value) => {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        };
+
+        // Renderização da tabela de custos
+        const renderCostTable = () => {
+            const tbody = document.getElementById('costTableBody');
+            tbody.innerHTML = '';
+            costs.forEach((cost, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3 border">${cost.desc}</td>
+                    <td class="p-3 border">${cost.category}</td>
+                    <td class="p-3 border">${formatCurrency(cost.value)}</td>
+                    <td class="p-3 border text-center">
+                        <button onclick="deleteCost(${index})" class="text-red-600 hover:text-red-800 font-semibold text-sm">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            updateDashboard();
+        };
+
+        // Adicionar novo custo
+        document.getElementById('costForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const desc = document.getElementById('costDesc').value;
+            const value = parseFloat(document.getElementById('costValue').value);
+            const category = document.getElementById('costCategory').value;
+
+            costs.push({ desc, value, category });
+            localStorage.setItem('hamburgueriaCosts', JSON.stringify(costs));
+            document.getElementById('costForm').reset();
+            renderCostTable();
+        });
+
+        // Deletar custo
+        const deleteCost = (index) => {
+            costs.splice(index, 1);
+            localStorage.setItem('hamburgueriaCosts', JSON.stringify(costs));
+            renderCostTable();
+        };
+
+        // Lógica de upload e cálculo de vendas
+        document.getElementById('excelFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                uploadedSalesData = json;
+                processSalesData();
+            };
+
+            reader.readAsArrayBuffer(file);
+        });
+
+        const processSalesData = () => {
+             updateDashboard();
+        };
+
+        // Atualização do Dashboard e Gráficos
+        const updateDashboard = () => {
+            let totalSalesAmount = 0; 
+            let totalDeliveryFees = 0; 
+
+            if(uploadedSalesData.length > 0) {
+                 uploadedSalesData.forEach(sale => {
+                     totalSalesAmount += parseFloat(sale['Valor'] || 0);
+                     totalDeliveryFees += parseFloat(sale['Entrega'] || 0);
+                 });
+            }
+
+            // Taxa da máquina fixa em 4.89%
+            const cardFeePercentage = 4.89 / 100;
+            const estimatedCardSales = totalSalesAmount * 0.7; 
+            const totalFeesAmount = estimatedCardSales * cardFeePercentage;
+
+            const totalCostsAmount = costs.reduce((acc, cost) => acc + cost.value, 0);
+            
+            const netProfitAmount = totalSalesAmount - totalFeesAmount - totalCostsAmount;
+
+            document.getElementById('totalSales').innerText = formatCurrency(totalSalesAmount);
+            document.getElementById('totalFees').innerText = formatCurrency(totalFeesAmount);
+            document.getElementById('totalCosts').innerText = formatCurrency(totalCostsAmount);
+            document.getElementById('netProfit').innerText = formatCurrency(netProfitAmount);
+
+            // Atualizar o gráfico
+            const categories = ['Insumos', 'Embalagens', 'Funcionário', 'Motoboy', 'Aluguel', 'Gás', 'Marketing', 'Outros'];
+            const dataValues = categories.map(cat => {
+                return costs.filter(c => c.category === cat).reduce((acc, c) => acc + c.value, 0);
+            });
+
+            if (costsChartInstance) costsChartInstance.destroy();
+
+            const ctx = document.getElementById('costsChart').getContext('2d');
+            costsChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: ['#f87171', '#fb923c', '#c084fc', '#34d399', '#facc15', '#4ade80', '#38bdf8', '#a8a29e'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        };
+
+        renderCostTable();
+    </script>
+</body>
+</html>
