@@ -1,7 +1,8 @@
 -- Execute once in the Supabase SQL Editor before deploying the updated HTML.
--- In Supabase Auth, enable email/password sign-in, disable email confirmation
--- (the login uses an internal, non-deliverable email), set minimum password
--- length to 6, and configure sign-in rate limits.
+-- In Supabase Auth, enable "Allow new users to sign up" and email/password
+-- sign-in, disable email confirmation (the login uses an internal,
+-- non-deliverable email), set minimum password length to 6, and configure
+-- sign-in rate limits.
 
 begin;
 

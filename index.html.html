@@ -539,6 +539,10 @@
           password: pin
         });
         if (error) {
+          if (/signups? are disabled|sign.?up is disabled/i.test(error.message)) {
+            mostrarMensagemAutenticacao('O Supabase está bloqueando novos cadastros. No painel do projeto, abra Authentication → Settings e ative “Allow new users to sign up”. Depois, tente novamente.', true);
+            return;
+          }
           mostrarMensagemAutenticacao(error.message, true);
           return;
         }
