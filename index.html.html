@@ -538,15 +538,31 @@
           email: emailInternoCnpj(cnpj),
           password: pin
         });
+        let sessao = data.session;
         if (error) {
-          if (/signups? are disabled|sign.?up is disabled/i.test(error.message)) {
+          if (error.code === 'signup_disabled' || /signups?\s+(?:are\s+)?(?:disabled|not allowed)|sign.?up is disabled/i.test(error.message || '')) {
             mostrarMensagemAutenticacao('O Supabase está bloqueando novos cadastros. No painel do projeto, abra Authentication → Settings e ative “Allow new users to sign up”. Depois, tente novamente.', true);
             return;
           }
-          mostrarMensagemAutenticacao(error.message, true);
-          return;
+          const cadastroExistente = error.code === 'user_already_exists'
+            || error.code === 'email_exists'
+            || /user already registered|email already (?:exists|registered)/i.test(error.message || '');
+          if (!cadastroExistente) {
+            mostrarMensagemAutenticacao(error.message, true);
+            return;
+          }
+
+          const { data: dadosLogin, error: erroLogin } = await supabaseClient.auth.signInWithPassword({
+            email: emailInternoCnpj(cnpj),
+            password: pin
+          });
+          if (erroLogin || !dadosLogin.session) {
+            mostrarMensagemAutenticacao('Este CNPJ já iniciou um cadastro. Tente entrar com o PIN usado naquela tentativa anterior.', true);
+            return;
+          }
+          sessao = dadosLogin.session;
         }
-        if (!data.session) {
+        if (!sessao) {
           mostrarMensagemAutenticacao('O cadastro foi criado, mas a sessão não foi iniciada. No Supabase, desative a confirmação de e-mail para permitir este tipo de login.', true);
           return;
         }
@@ -554,11 +570,15 @@
         const { error: erroEmpresa } = await supabaseClient.rpc('registrar_empresa', { p_cnpj: cnpj });
         if (erroEmpresa) {
           await supabaseClient.auth.signOut();
-          mostrarMensagemAutenticacao(erroEmpresa.message, true);
+          if (erroEmpresa.code === 'PGRST202') {
+            mostrarMensagemAutenticacao('A configuração do banco ainda não foi aplicada. Execute o arquivo supabase/login-cnpj.sql no SQL Editor do Supabase e tente novamente.', true);
+          } else {
+            mostrarMensagemAutenticacao(erroEmpresa.message, true);
+          }
           return;
         }
 
-        await abrirAplicacao(data.session);
+        await abrirAplicacao(sessao);
       } catch (erro) {
         console.error('Erro ao abrir a conta cadastrada:', erro);
         await supabaseClient.auth.signOut();
