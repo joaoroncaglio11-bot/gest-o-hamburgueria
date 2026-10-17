@@ -256,20 +256,6 @@
           </div>
         </div>
 
-        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
-          <h3 class="font-semibold text-slate-200 mb-3">Clientes frequentes</h3>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-slate-300">
-              <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
-                <tr><th class="p-3">Cliente</th><th class="p-3 text-right">Pedidos</th><th class="p-3 text-right">Faturamento</th></tr>
-              </thead>
-              <tbody id="relatorio-clientes" class="divide-y divide-slate-700">
-                <tr><td colspan="3" class="p-4 text-center text-slate-500">A carregar dados...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
       </div>
     </section>
 
@@ -756,7 +742,6 @@
       const moeda = valor => Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       const porPagamento = new Map();
       const porCategoria = new Map();
-      const porCliente = new Map();
 
       vendas.forEach(venda => {
         const pag = venda.pagamento || 'Outros';
@@ -765,12 +750,6 @@
         pObj.pedidos += 1;
         pObj.faturamento += calcularFaturamentoLiquido(venda);
         pObj.taxaMaquina += calcularTaxaMaquina(venda);
-
-        const cli = venda.cliente || 'Desconhecido';
-        if (!porCliente.has(cli)) porCliente.set(cli, { pedidos: 0, faturamento: 0 });
-        const cObj = porCliente.get(cli);
-        cObj.pedidos += 1;
-        cObj.faturamento += calcularFaturamentoLiquido(venda);
 
       });
 
@@ -800,18 +779,6 @@
         </tr>
       `);
       preencherTabelaRelatorio('relatorio-categorias', 3, linhasCategorias, 'Nenhuma despesa registada.');
-
-      const linhasClientes = [...porCliente.entries()]
-        .sort((a, b) => b[1].faturamento - a[1].faturamento)
-        .slice(0, 10)
-        .map(([cli, obj]) => `
-          <tr>
-            <td class="p-3 text-slate-200 font-medium">${escaparHTML(cli)}</td>
-            <td class="p-3 text-right">${obj.pedidos}</td>
-            <td class="p-3 text-right text-amber-400">${moeda(obj.faturamento)}</td>
-          </tr>
-        `);
-      preencherTabelaRelatorio('relatorio-clientes', 3, linhasClientes, 'Nenhum cliente registado.');
 
     }
   </script>
