@@ -1,82 +1,819 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão Financeira - Hamburgueria</title>
-    <!-- Tailwind CSS & Bibliotecas -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão - Hamburgueria</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS SDK (v2) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- SheetJS para ler arquivos Excel/CSV -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    body[data-theme="light"] {
+      background-color: #f3f4f6 !important;
+      color: #1f2937 !important;
+    }
+
+    [data-theme="light"] .bg-slate-900 {
+      background-color: #f9fafb !important;
+    }
+
+    [data-theme="light"] .bg-slate-800 {
+      background-color: #ffffff !important;
+    }
+
+    [data-theme="light"] .bg-slate-700 {
+      background-color: #e5e7eb !important;
+    }
+
+    [data-theme="light"] .text-slate-100 {
+      color: #1f2937 !important;
+    }
+
+    [data-theme="light"] .text-slate-200 {
+      color: #374151 !important;
+    }
+
+    [data-theme="light"] .text-slate-300 {
+      color: #4b5563 !important;
+    }
+
+    [data-theme="light"] .text-slate-400 {
+      color: #6b7280 !important;
+    }
+
+    [data-theme="light"] .text-slate-500 {
+      color: #6b7280 !important;
+    }
+
+    [data-theme="light"] .border-slate-700 {
+      border-color: #e5e7eb !important;
+    }
+
+    body[data-theme="dark"] {
+      background-color: #000000 !important;
+      color: #e5e7eb !important;
+    }
+
+    body[data-theme="dark"] .bg-slate-900 {
+      background-color: #000000 !important;
+    }
+
+    body[data-theme="dark"] .bg-slate-800 {
+      background-color: #383838 !important;
+    }
+
+    body[data-theme="dark"] .bg-slate-700 {
+      background-color: #000000 !important;
+    }
+
+    body[data-theme="dark"] .border-slate-700 {
+      border-color: #484848 !important;
+    }
+
+    body[data-theme="dark"] .text-amber-500,
+    body[data-theme="dark"] .text-amber-400,
+    body[data-theme="dark"] .text-rose-400,
+    body[data-theme="dark"] .text-emerald-400,
+    body[data-theme="dark"] .text-cyan-400,
+    body[data-theme="dark"] .text-blue-400 {
+      color: #d1d5db !important;
+    }
+
+    body[data-theme="light"] .text-amber-500,
+    body[data-theme="light"] .text-amber-400,
+    body[data-theme="light"] .text-rose-400,
+    body[data-theme="light"] .text-emerald-400,
+    body[data-theme="light"] .text-cyan-400,
+    body[data-theme="light"] .text-blue-400 {
+      color: #4b5563 !important;
+    }
+
+    [data-theme] .bg-amber-600,
+    [data-theme] .bg-emerald-600,
+    [data-theme] .bg-rose-600 {
+      background-color: #000000 !important;
+    }
+
+    [data-theme] .hover\:bg-amber-700:hover,
+    [data-theme] .hover\:bg-emerald-700:hover,
+    [data-theme] .hover\:bg-rose-700:hover {
+      background-color: #222222 !important;
+    }
+
+    [data-theme] .border-amber-500 {
+      border-color: #9ca3af !important;
+    }
+
+    [data-theme] .focus\:border-amber-500:focus {
+      border-color: #9ca3af !important;
+    }
+
+    [data-theme] input[type="file"]::file-selector-button {
+      background-color: #000000;
+      color: #f9fafb;
+    }
+
+    [data-theme] input[type="file"]:hover::file-selector-button {
+      background-color: #222222;
+    }
+
+    [data-theme] #status-conexao {
+      background-color: #000000 !important;
+      color: #d1d5db !important;
+      border-color: #484848 !important;
+    }
+
+    body[data-theme="dark"] #aba-pedidos,
+    body[data-theme="dark"] #aba-despesas {
+      border-bottom-color: transparent !important;
+      background-color: #000000;
+      color: #9ca3af !important;
+    }
+
+    body[data-theme="dark"] #aba-pedidos[aria-selected="true"],
+    body[data-theme="dark"] #aba-despesas[aria-selected="true"] {
+      background-color: #4b4b4b;
+      color: #f9fafb !important;
+    }
+
+    body[data-theme="dark"] #aba-pedidos:hover,
+    body[data-theme="dark"] #aba-despesas:hover {
+      background-color: #333333;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans pb-10">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
 
-    <header class="bg-red-600 text-white p-6 shadow-lg">
-        <h1 class="text-3xl font-bold text-center">Dashboard da Hamburgueria</h1>
-    </header>
+  <!-- CABEÇALHO -->
+  <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md">
+    <div class="max-w-screen-2xl mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-700 text-sm font-semibold text-slate-200">H</span>
+        <h1 class="text-xl font-semibold tracking-wide text-amber-500">Hamburgueria <span class="font-normal text-slate-400">/ Painel de Gestão</span></h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="botao-tema" type="button" onclick="alternarTema()" class="bg-amber-600 hover:bg-amber-700 text-white font-medium px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer" aria-label="Ativar modo claro">
+          Modo claro
+        </button>
+        <div id="status-conexao" class="text-xs px-3 py-1 rounded-full bg-red-950 text-red-400 border border-red-800 font-medium">
+          A conectar...
+        </div>
+      </div>
+    </div>
+  </header>
 
-    <main class="max-w-6xl mx-auto mt-8 px-4">
-        <!-- Conexão Supabase -->
-        <section class="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">Configurações do Supabase</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium">URL do Supabase</label>
-                    <input type="text" id="supabaseUrl" placeholder="https://seu-projeto.supabase.co" class="w-full mt-1 p-2 border rounded">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium">Chave Pública (Publishable Key)</label>
-                    <input type="password" id="supabaseKey" placeholder="sb_publishable_..." class="w-full mt-1 p-2 border rounded">
-                </div>
-            </div>
-            <button onclick="salvarCredenciaisSupabase()" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Conectar Banco de Dados</button>
-        </section>
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="max-w-screen-2xl mx-auto p-4 md:p-6 space-y-6">
 
-        <!-- KPI Cards -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
-                <p class="text-sm text-gray-500">Total Vendas</p>
-                <h3 class="text-2xl font-bold" id="totalSales">R$ 0,00</h3>
-            </div>
-        </section>
-    </main>
+    <h2 class="text-lg font-semibold text-slate-200">Resumo do mês atual</h2>
 
-    <script>
-        let supabaseClient = null;
+    <!-- CARDS DE RESUMO (KPIs) -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4">
+      <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+        <p class="text-sm text-slate-400 font-medium">Faturamento Líquido</p>
+        <p class="text-2xl font-bold text-amber-400 mt-1" id="kpi-faturamento">R$ 0,00</p>
+      </div>
 
-        function inicializarSupabase() {
-            const url = localStorage.getItem('sb_url');
-            const key = localStorage.getItem('sb_key');
-            if (url && key) {
-                document.getElementById('supabaseUrl').value = url;
-                document.getElementById('supabaseKey').value = key;
-                supabaseClient = supabase.createClient(url, key);
-                carregarDadosSupabase();
+      <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+        <p class="text-sm text-slate-400 font-medium">Custos Totais</p>
+        <p class="text-2xl font-bold text-rose-400 mt-1" id="kpi-custos">R$ 0,00</p>
+      </div>
+
+      <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+        <p class="text-sm text-slate-400 font-medium">Taxas da Máquina (4,89%)</p>
+        <p class="text-2xl font-bold text-rose-400 mt-1" id="kpi-taxas-maquina">R$ 0,00</p>
+      </div>
+
+      <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+        <p class="text-sm text-slate-400 font-medium">Lucro Líquido</p>
+        <p class="text-2xl font-bold text-emerald-400 mt-1" id="kpi-lucro">R$ 0,00</p>
+      </div>
+
+      <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+        <p class="text-sm text-slate-400 font-medium">Taxas de Entrega</p>
+        <p class="text-2xl font-bold text-cyan-400 mt-1" id="kpi-taxas-entrega">R$ 0,00</p>
+      </div>
+
+      <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+        <p class="text-sm text-slate-400 font-medium">Ticket Médio / Vendas</p>
+        <p class="text-2xl font-bold text-blue-400 mt-1" id="kpi-ticket-vendas">R$ 0,00 (0)</p>
+      </div>
+    </section>
+
+    <!-- BARRA DE FILTRO POR PERÍODO -->
+    <section class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-2 w-full md:w-auto flex-wrap">
+        <span class="text-sm text-slate-300 font-semibold">Filtrar Período:</span>
+        <div class="flex items-center gap-1">
+          <span class="text-xs text-slate-400">De:</span>
+          <input type="date" id="filtro-data-inicio" onclick="if (this.showPicker) this.showPicker()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500 cursor-pointer">
+        </div>
+        <div class="flex items-center gap-1">
+          <span class="text-xs text-slate-400">Até:</span>
+          <input type="date" id="filtro-data-fim" onclick="if (this.showPicker) this.showPicker()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500 cursor-pointer">
+        </div>
+        <button onclick="carregarDados()" class="bg-amber-600 hover:bg-amber-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer">
+          Filtrar
+        </button>
+        <button onclick="limparFiltro()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer">
+          Ver Todos
+        </button>
+      </div>
+    </section>
+
+    <!-- RELATÓRIOS DE GESTÃO -->
+    <section class="space-y-4">
+      <h2 class="text-lg font-semibold text-slate-200">Relatórios de Gestão</h2>
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+          <h3 class="font-semibold text-slate-200 mb-3">Vendas por forma de pagamento</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+                <tr><th class="p-3">Forma de pagamento</th><th class="p-3 text-right">Pedidos</th><th class="p-3 text-right">Faturamento</th><th class="p-3 text-right">Taxa da máquina</th></tr>
+              </thead>
+              <tbody id="relatorio-pagamentos" class="divide-y divide-slate-700">
+                <tr><td colspan="4" class="p-4 text-center text-slate-500">A carregar dados...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+          <h3 class="font-semibold text-slate-200 mb-3">Despesas por categoria</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+                <tr><th class="p-3">Categoria</th><th class="p-3 text-right">Lançamentos</th><th class="p-3 text-right">Total</th></tr>
+              </thead>
+              <tbody id="relatorio-categorias" class="divide-y divide-slate-700">
+                <tr><td colspan="3" class="p-4 text-center text-slate-500">A carregar dados...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+          <h3 class="font-semibold text-slate-200 mb-3">Clientes frequentes</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+                <tr><th class="p-3">Cliente</th><th class="p-3 text-right">Pedidos</th><th class="p-3 text-right">Faturamento</th></tr>
+              </thead>
+              <tbody id="relatorio-clientes" class="divide-y divide-slate-700">
+                <tr><td colspan="3" class="p-4 text-center text-slate-500">A carregar dados...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- GRID DE IMPORTAÇÃO E CADASTRO DE CUSTOS -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- IMPORTAR EXCEL -->
+      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+        <h2 class="text-lg font-semibold text-slate-200">Importar Relatório de Pedidos</h2>
+        <p class="text-sm text-slate-400">Carrega o relatório do PedeApp. Vendas no cartão têm taxa de máquina de 4,89%, descontada do resultado.</p>
+        
+        <div class="flex flex-col sm:flex-row items-center gap-4 pt-2">
+          <input type="file" id="input-excel" accept=".xlsx, .xls, .csv" 
+            class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-700 cursor-pointer bg-slate-900 border border-slate-700 rounded-lg p-2"/>
+          
+          <button onclick="processarPlanilha()" 
+            class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2 rounded-lg transition-colors shadow-sm cursor-pointer whitespace-nowrap">
+            Enviar
+          </button>
+        </div>
+        <div id="status-importacao" class="text-sm text-slate-300 font-medium"></div>
+      </div>
+
+      <!-- CADASTRAR CUSTO MANUAL -->
+      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+        <h2 class="text-lg font-semibold text-slate-200">Registar Custo / Despesa</h2>
+        <p class="text-sm text-slate-400">Adiciona funcionários, motoboy, insumos, etc.</p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input type="text" id="custo-desc" placeholder="Descrição (ex: Taxa Motoboy)" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+          <select id="custo-cat" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+            <option value="Motoboy">Motoboy</option>
+            <option value="Funcionário">Funcionário</option>
+            <option value="Insumos">Insumos</option>
+            <option value="Embalagens">Embalagens</option>
+            <option value="Outros">Outros</option>
+          </select>
+          <input type="number" step="0.01" id="custo-valor" placeholder="Valor (R$)" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+          <input type="date" id="custo-data" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+        </div>
+        <button onclick="adicionarCusto()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium py-2 rounded-lg text-sm transition-colors cursor-pointer">
+          Adicionar Custo ao Supabase
+        </button>
+        <div id="status-custo" class="text-sm text-slate-300 font-medium"></div>
+      </div>
+
+    </section>
+
+    <!-- HISTÓRICOS -->
+    <section class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+      <div class="flex gap-2 border-b border-slate-700" role="tablist" aria-label="Históricos">
+        <button id="aba-pedidos" type="button" role="tab" aria-selected="true" aria-controls="painel-pedidos" onclick="selecionarHistorico('pedidos')" class="px-4 py-2 text-sm font-medium border-b-2 border-amber-500 text-amber-400">
+          Histórico de Pedidos
+        </button>
+        <button id="aba-despesas" type="button" role="tab" aria-selected="false" aria-controls="painel-despesas" onclick="selecionarHistorico('despesas')" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+          Histórico de Despesas
+        </button>
+      </div>
+
+      <div id="painel-pedidos" role="tabpanel" aria-labelledby="aba-pedidos">
+        <div class="overflow-x-auto rounded-lg border border-slate-700">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+              <tr>
+                <th class="p-3">Pedido</th>
+                <th class="p-3">Data/Hora</th>
+                <th class="p-3">Cliente</th>
+                <th class="p-3">Itens</th>
+                <th class="p-3">Pagamento</th>
+                <th class="p-3 text-right">Taxa da Máquina</th>
+                <th class="p-3 text-right">Taxa de Entrega</th>
+                <th class="p-3 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-vendas" class="divide-y divide-slate-700">
+              <tr><td colspan="8" class="p-4 text-center text-slate-500">A carregar dados...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="painel-despesas" role="tabpanel" aria-labelledby="aba-despesas" hidden>
+        <div class="overflow-x-auto rounded-lg border border-slate-700">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+              <tr>
+                <th class="p-3">Data</th>
+                <th class="p-3">Descrição</th>
+                <th class="p-3">Categoria</th>
+                <th class="p-3 text-right">Valor</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-despesas" class="divide-y divide-slate-700">
+              <tr><td colspan="4" class="p-4 text-center text-slate-500">A carregar dados...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- LÓGICA DO SUPABASE -->
+  <script>
+    const SUPABASE_URL = 'https://dinwdrwdeceoruccnuly.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_TU6HaVhbZwu7iFY7O3Io9w_wGeQ4aBI'; 
+    const TAXA_MAQUINA_CARTAO = 0.0489;
+
+    let supabaseClient = null;
+
+    function definirTema(tema) {
+      const temaClaro = tema === 'light';
+      document.body.dataset.theme = temaClaro ? 'light' : 'dark';
+      const botaoTema = document.getElementById('botao-tema');
+      botaoTema.textContent = temaClaro ? 'Modo escuro' : 'Modo claro';
+      botaoTema.setAttribute('aria-label', temaClaro ? 'Ativar modo escuro' : 'Ativar modo claro');
+    }
+
+    function alternarTema() {
+      const tema = document.body.dataset.theme === 'light' ? 'dark' : 'light';
+      definirTema(tema);
+      try {
+        localStorage.setItem('tema', tema);
+      } catch (error) {
+        console.error('Erro ao salvar a preferência de tema:', error);
+      }
+    }
+
+    try {
+      definirTema(localStorage.getItem('tema') || 'dark');
+    } catch (error) {
+      console.error('Erro ao carregar a preferência de tema:', error);
+      definirTema('dark');
+    }
+
+    try {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      if (supabaseClient) {
+        const badge = document.getElementById('status-conexao');
+        badge.textContent = 'Conectado';
+        badge.className = 'text-xs px-3 py-1 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-medium';
+        
+        document.getElementById('custo-data').valueAsDate = new Date();
+        carregarDados(); 
+      }
+    } catch (error) {
+      console.error('Erro ao conectar ao Supabase:', error);
+    }
+
+    function converterValorPlanilha(valor) {
+      if (typeof valor === 'number') return valor;
+      const texto = String(valor || '').replace(/R\$\s?/gi, '').replace(/\s/g, '');
+      const normalizado = texto.includes(',')
+        ? texto.replace(/\./g, '').replace(',', '.')
+        : texto;
+      return parseFloat(normalizado) || 0;
+    }
+
+    // Processar e importar Relatório do PedeApp (CSV com separador ;)
+    async function processarPlanilha() {
+      const fileInput = document.getElementById('input-excel');
+      const statusDiv = document.getElementById('status-importacao');
+
+      if (fileInput.files.length === 0) {
+        alert('Por favor, seleciona um arquivo do PedeApp primeiro!');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      statusDiv.textContent = 'A ler o arquivo...';
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const text = e.target.result;
+          const linhas = text.split(/\r?\n/);
+          const dadosParaInserir = [];
+          
+          let secaoPedidos = false;
+
+          for (let linha of linhas) {
+            linha = linha.trim();
+            if (!linha || linha.startsWith('---')) continue;
+
+            if (linha.includes('PEDIDOS DO PERÍODO COM DETALHAMENTO DE FRETE')) {
+              secaoPedidos = true;
+              continue;
             }
-        }
 
-        function salvarCredenciaisSupabase() {
-            const url = document.getElementById('supabaseUrl').value.trim();
-            const key = document.getElementById('supabaseKey').value.trim();
-            if (url && key) {
-                localStorage.setItem('sb_url', url);
-                localStorage.setItem('sb_key', key);
-                supabaseClient = supabase.createClient(url, key);
-                alert('Conectado ao Supabase com sucesso!');
-                carregarDadosSupabase();
+            if (secaoPedidos) {
+              if (linha.startsWith('Pedido #')) {
+                continue; // Pula o cabeçalho
+              }
+
+              const colunas = linha.split(';').map(c => c.replace(/^"|"$/g, '').trim());
+              
+              if (colunas.length >= 8 && colunas[0] && colunas[0].match(/^\d+$/)) {
+                dadosParaInserir.push({
+                  numero_pedido: '#' + colunas[0],
+                  data_hora: colunas[1] || '-',
+                  cliente: colunas[2] || '-',
+                  pagamento: colunas[5] || 'Outros',
+                  total: converterValorPlanilha(colunas[6]),
+                  taxa: converterValorPlanilha(colunas[7]),
+                  itens: colunas[3] + ' (' + colunas[4] + ')'
+                });
+              }
             }
+          }
+
+          if (dadosParaInserir.length === 0) {
+            // Tenta fallback com SheetJS caso seja formato XLSX puro
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rows = XLSX.utils.sheet_to_json(worksheet);
+            
+            statusDiv.textContent = 'O arquivo CSV precisa estar no formato padrão PedeApp.';
+            return;
+          }
+
+          statusDiv.textContent = `A enviar ${dadosParaInserir.length} pedidos...`;
+          const { error } = await supabaseClient.from('vendas').insert(dadosParaInserir);
+
+          if (error) {
+            statusDiv.textContent = 'Erro: ' + error.message;
+          } else {
+            statusDiv.textContent = 'Sucesso! Pedidos importados!';
+            fileInput.value = ''; 
+            carregarDados(); 
+          }
+        } catch (err) {
+          statusDiv.textContent = 'Erro ao processar arquivo: ' + err.message;
+        }
+      };
+      
+      // Lê como texto para processar o CSV estruturado do PedeApp com precisão
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    // Adicionar Custo Manual
+    async function adicionarCusto() {
+      const desc = document.getElementById('custo-desc').value;
+      const cat = document.getElementById('custo-cat').value;
+      const valor = parseFloat(document.getElementById('custo-valor').value);
+      const dataInput = document.getElementById('custo-data').value;
+      const statusDiv = document.getElementById('status-custo');
+
+      if (!desc || !valor || !dataInput) {
+        alert('Preenche todos os campos do custo!');
+        return;
+      }
+
+      const partes = dataInput.split('-');
+      const dataFormatada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+
+      const { error } = await supabaseClient.from('custos').insert([
+        { descricao: desc, categoria: cat, valor: valor, data: dataFormatada }
+      ]);
+
+      if (error) {
+        statusDiv.textContent = 'Erro ao salvar custo: ' + error.message;
+      } else {
+        statusDiv.textContent = 'Custo registado com sucesso!';
+        document.getElementById('custo-desc').value = '';
+        document.getElementById('custo-valor').value = '';
+        carregarDados();
+      }
+    }
+
+    function normalizarDataFiltro(valor) {
+      if (!valor) return null;
+      const texto = String(valor).trim();
+      let ano, mes, dia;
+      let partes = texto.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+
+      if (partes) {
+        [, ano, mes, dia] = partes;
+      } else {
+        partes = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (!partes) return null;
+        [, dia, mes, ano] = partes;
+      }
+
+      const data = new Date(Date.UTC(Number(ano), Number(mes) - 1, Number(dia)));
+      if (
+        data.getUTCFullYear() !== Number(ano) ||
+        data.getUTCMonth() !== Number(mes) - 1 ||
+        data.getUTCDate() !== Number(dia)
+      ) {
+        return null;
+      }
+
+      return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    }
+
+    async function carregarDados() {
+      try {
+        const { data: vendas, error: errVendas } = await supabaseClient.from('vendas').select('*').order('id', { ascending: false });
+        if (errVendas) throw errVendas;
+
+        const { data: custos, error: errCustos } = await supabaseClient.from('custos').select('*').order('id', { ascending: false });
+        if (errCustos) throw errCustos;
+
+        const dataInicioStr = document.getElementById('filtro-data-inicio').value;
+        const dataFimStr = document.getElementById('filtro-data-fim').value;
+
+        let vendasFiltradas = vendas || [];
+        let custosFiltrados = custos || [];
+
+        if (dataInicioStr || dataFimStr) {
+          const dInicio = dataInicioStr || '0000-01-01';
+          const dFim = dataFimStr || '9999-12-31';
+
+          vendasFiltradas = (vendas || []).filter(v => {
+            const dataVenda = normalizarDataFiltro(v.data_hora);
+            return dataVenda !== null && dataVenda >= dInicio && dataVenda <= dFim;
+          });
+
+          custosFiltrados = (custos || []).filter(c => {
+            const dataCusto = normalizarDataFiltro(c.data);
+            return dataCusto !== null && dataCusto >= dInicio && dataCusto <= dFim;
+          });
         }
 
-        async function carregarDadosSupabase() {
-            if (!supabaseClient) return;
-            const { data, error } = await supabaseClient.from('custos').select('*');
-            if (error) console.error('Erro ao buscar dados:', error);
-            else console.log('Dados do Supabase:', data);
-        }
+        const hoje = new Date();
+        const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+        const vendasMesAtual = (vendas || []).filter(v => {
+          const dataVenda = normalizarDataFiltro(v.data_hora);
+          return dataVenda !== null && dataVenda.slice(0, 7) === mesAtual;
+        });
+        const custosMesAtual = (custos || []).filter(c => {
+          const dataCusto = normalizarDataFiltro(c.data);
+          return dataCusto !== null && dataCusto.slice(0, 7) === mesAtual;
+        });
 
-        window.onload = inicializarSupabase;
-    </script>
+        atualizarKPIs(vendasMesAtual, custosMesAtual);
+        preencherTabelaVendas(vendasFiltradas);
+        preencherTabelaDespesas(custosFiltrados);
+        atualizarRelatorios(vendasFiltradas, custosFiltrados);
+
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+      }
+    }
+
+    function limparFiltro() {
+      document.getElementById('filtro-data-inicio').value = '';
+      document.getElementById('filtro-data-fim').value = '';
+      carregarDados();
+    }
+
+    function selecionarHistorico(tipo) {
+      const btnPedidos = document.getElementById('aba-pedidos');
+      const btnDespesas = document.getElementById('aba-despesas');
+      const painelPedidos = document.getElementById('painel-pedidos');
+      const painelDespesas = document.getElementById('painel-despesas');
+
+      if (tipo === 'pedidos') {
+        btnPedidos.setAttribute('aria-selected', 'true');
+        btnPedidos.className = 'px-4 py-2 text-sm font-medium border-b-2 border-amber-500 text-amber-400';
+        btnDespesas.setAttribute('aria-selected', 'false');
+        btnDespesas.className = 'px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200';
+        painelPedidos.hidden = false;
+        painelDespesas.hidden = true;
+      } else {
+        btnDespesas.setAttribute('aria-selected', 'true');
+        btnDespesas.className = 'px-4 py-2 text-sm font-medium border-b-2 border-amber-500 text-amber-400';
+        btnPedidos.setAttribute('aria-selected', 'false');
+        btnPedidos.className = 'px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200';
+        painelDespesas.hidden = false;
+        painelPedidos.hidden = true;
+      }
+    }
+
+    function preencherTabelaVendas(data) {
+      const tbody = document.getElementById('tabela-vendas');
+      tbody.innerHTML = '';
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">Nenhum pedido encontrado no período.</td></tr>`;
+        return;
+      }
+      data.forEach(v => {
+        const taxaMaquina = calcularTaxaMaquina(v);
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-750 transition-colors';
+        tr.innerHTML = `
+          <td class="p-3 font-medium text-slate-200">${v.numero_pedido || '-'}</td>
+          <td class="p-3 text-slate-400 text-xs">${v.data_hora || '-'}</td>
+          <td class="p-3 text-slate-200">${v.cliente || '-'}</td>
+          <td class="p-3 text-slate-300 text-xs">${v.itens || '-'}</td>
+          <td class="p-3 text-slate-300">${v.pagamento || '-'}</td>
+          <td class="p-3 text-right text-rose-400">${taxaMaquina.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+          <td class="p-3 text-right text-cyan-400">${Number(v.taxa || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+          <td class="p-3 text-right font-bold text-amber-400">${Number(v.total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function preencherTabelaDespesas(data) {
+      const tbody = document.getElementById('tabela-despesas');
+      tbody.innerHTML = '';
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Nenhuma despesa encontrada no período.</td></tr>`;
+        return;
+      }
+      data.forEach(custo => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-750 transition-colors';
+        tr.innerHTML = `
+          <td class="p-3 text-slate-400 text-xs">${custo.data || '-'}</td>
+          <td class="p-3 font-semibold text-slate-200">${custo.descricao || '-'}</td>
+          <td class="p-3"><span class="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs font-medium">${custo.categoria || '-'}</span></td>
+          <td class="p-3 text-right font-bold text-rose-400">${Number(custo.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function escaparHTML(valor) {
+      return String(valor).replace(/[&<>"']/g, caractere => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[caractere]);
+    }
+
+    function preencherTabelaRelatorio(id, quantidadeColunas, linhas, mensagemVazia) {
+      const tbody = document.getElementById(id);
+      tbody.innerHTML = linhas.length
+        ? linhas.join('')
+        : `<tr><td colspan="${quantidadeColunas}" class="p-4 text-center text-slate-500">${escaparHTML(mensagemVazia)}</td></tr>`;
+    }
+
+    function calcularTaxaMaquina(venda) {
+      const formaPagamento = String(venda.pagamento || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+      if (!/(cartao|credito|debito|card)/.test(formaPagamento)) return 0;
+      const total = Number(venda.total) || 0;
+      return Math.round(total * TAXA_MAQUINA_CARTAO * 100) / 100;
+    }
+
+    function calcularFaturamentoLiquido(venda) {
+      return (Number(venda.total) || 0) - calcularTaxaMaquina(venda);
+    }
+
+    function atualizarKPIs(vendas, custos) {
+      let faturamento = 0;
+      let taxasEntrega = 0;
+      let taxasMaquina = 0;
+      let totalCustos = 0;
+
+      vendas.forEach(v => {
+        faturamento += calcularFaturamentoLiquido(v);
+        taxasEntrega += Number(v.taxa) || 0;
+        taxasMaquina += calcularTaxaMaquina(v);
+      });
+
+      custos.forEach(c => {
+        totalCustos += Number(c.valor) || 0;
+      });
+
+      const lucroLiquido = faturamento - totalCustos;
+      const qtdVendas = vendas.length;
+      const ticketMedio = qtdVendas > 0 ? faturamento / qtdVendas : 0;
+
+      const moeda = val => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      document.getElementById('kpi-faturamento').textContent = moeda(faturamento);
+      document.getElementById('kpi-custos').textContent = moeda(totalCustos);
+      document.getElementById('kpi-taxas-maquina').textContent = moeda(taxasMaquina);
+      document.getElementById('kpi-lucro').textContent = moeda(lucroLiquido);
+      document.getElementById('kpi-taxas-entrega').textContent = moeda(taxasEntrega);
+      document.getElementById('kpi-ticket-vendas').textContent = `${moeda(ticketMedio)} (${qtdVendas})`;
+    }
+
+    function atualizarRelatorios(vendas, custos) {
+      const moeda = valor => Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const porPagamento = new Map();
+      const porCategoria = new Map();
+      const porCliente = new Map();
+
+      vendas.forEach(venda => {
+        const pag = venda.pagamento || 'Outros';
+        if (!porPagamento.has(pag)) porPagamento.set(pag, { pedidos: 0, faturamento: 0, taxaMaquina: 0 });
+        const pObj = porPagamento.get(pag);
+        pObj.pedidos += 1;
+        pObj.faturamento += calcularFaturamentoLiquido(venda);
+        pObj.taxaMaquina += calcularTaxaMaquina(venda);
+
+        const cli = venda.cliente || 'Desconhecido';
+        if (!porCliente.has(cli)) porCliente.set(cli, { pedidos: 0, faturamento: 0 });
+        const cObj = porCliente.get(cli);
+        cObj.pedidos += 1;
+        cObj.faturamento += calcularFaturamentoLiquido(venda);
+
+      });
+
+      custos.forEach(custo => {
+        const cat = custo.categoria || 'Outros';
+        if (!porCategoria.has(cat)) porCategoria.set(cat, { lancamentos: 0, total: 0 });
+        const catObj = porCategoria.get(cat);
+        catObj.lancamentos += 1;
+        catObj.total += Number(custo.valor) || 0;
+      });
+
+      const linhasPagamentos = [...porPagamento.entries()].map(([pag, obj]) => `
+        <tr>
+          <td class="p-3 text-slate-200 font-medium">${escaparHTML(pag)}</td>
+          <td class="p-3 text-right">${obj.pedidos}</td>
+          <td class="p-3 text-right">${moeda(obj.faturamento)}</td>
+          <td class="p-3 text-right text-rose-400">${moeda(obj.taxaMaquina)}</td>
+        </tr>
+      `);
+      preencherTabelaRelatorio('relatorio-pagamentos', 4, linhasPagamentos, 'Nenhum dado de pagamento.');
+
+      const linhasCategorias = [...porCategoria.entries()].map(([cat, obj]) => `
+        <tr>
+          <td class="p-3 text-slate-200 font-medium">${escaparHTML(cat)}</td>
+          <td class="p-3 text-right">${obj.lancamentos}</td>
+          <td class="p-3 text-right text-rose-400">${moeda(obj.total)}</td>
+        </tr>
+      `);
+      preencherTabelaRelatorio('relatorio-categorias', 3, linhasCategorias, 'Nenhuma despesa registada.');
+
+      const linhasClientes = [...porCliente.entries()]
+        .sort((a, b) => b[1].faturamento - a[1].faturamento)
+        .slice(0, 10)
+        .map(([cli, obj]) => `
+          <tr>
+            <td class="p-3 text-slate-200 font-medium">${escaparHTML(cli)}</td>
+            <td class="p-3 text-right">${obj.pedidos}</td>
+            <td class="p-3 text-right text-amber-400">${moeda(obj.faturamento)}</td>
+          </tr>
+        `);
+      preencherTabelaRelatorio('relatorio-clientes', 3, linhasClientes, 'Nenhum cliente registado.');
+
+    }
+  </script>
 </body>
 </html>
