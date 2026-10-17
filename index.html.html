@@ -11,6 +11,10 @@
   <!-- SheetJS para ler arquivos Excel/CSV -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
+    [hidden] {
+      display: none !important;
+    }
+
     body[data-theme="light"] {
       background-color: #f3f4f6 !important;
       color: #1f2937 !important;
@@ -147,8 +151,26 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
 
+  <section id="painel-senha" class="min-h-screen flex items-center justify-center p-4">
+    <form class="w-full max-w-md bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-5" onsubmit="desbloquearPainel(event)">
+      <div>
+        <h1 class="text-xl font-semibold text-amber-400">Gestão - Hamburgueria</h1>
+        <p class="mt-2 text-sm text-slate-400">Digite a senha para abrir o painel.</p>
+      </div>
+      <div>
+        <label for="senha-painel" class="block text-sm text-slate-300 mb-1">Senha</label>
+        <input id="senha-painel" type="password" inputmode="numeric" autocomplete="current-password" required
+          class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-3 focus:outline-none focus:border-amber-500">
+      </div>
+      <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 rounded-lg text-sm transition-colors cursor-pointer">
+        Entrar
+      </button>
+      <p id="mensagem-senha" class="text-sm text-rose-400" role="alert" aria-live="polite"></p>
+    </form>
+  </section>
+
   <!-- CABEÇALHO -->
-  <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-md">
+  <header id="app-cabecalho" hidden class="bg-slate-800 border-b border-slate-700 p-4 shadow-md">
     <div class="max-w-screen-2xl mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-3">
         <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-700 text-sm font-semibold text-slate-200">H</span>
@@ -166,7 +188,7 @@
   </header>
 
   <!-- CONTEÚDO PRINCIPAL -->
-  <main class="max-w-screen-2xl mx-auto p-4 md:p-6 space-y-6">
+  <main id="app-conteudo" hidden class="max-w-screen-2xl mx-auto p-4 md:p-6 space-y-6">
 
     <h2 class="text-lg font-semibold text-slate-200">Resumo do mês atual</h2>
 
@@ -363,8 +385,10 @@
     const SUPABASE_URL = 'https://dinwdrwdeceoruccnuly.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_TU6HaVhbZwu7iFY7O3Io9w_wGeQ4aBI'; 
     const TAXA_MAQUINA_CARTAO = 0.0489;
+    const SENHA_PAINEL = '2134';
 
     let supabaseClient = null;
+    let painelDesbloqueado = false;
 
     function definirTema(tema) {
       const temaClaro = tema === 'light';
@@ -391,18 +415,36 @@
       definirTema('dark');
     }
 
-    try {
-      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      if (supabaseClient) {
+    function desbloquearPainel(event) {
+      event.preventDefault();
+      const campoSenha = document.getElementById('senha-painel');
+      if (campoSenha.value !== SENHA_PAINEL) {
+        document.getElementById('mensagem-senha').textContent = 'Senha incorreta.';
+        campoSenha.value = '';
+        campoSenha.focus();
+        return;
+      }
+
+      painelDesbloqueado = true;
+      document.getElementById('painel-senha').hidden = true;
+      document.getElementById('app-cabecalho').hidden = false;
+      document.getElementById('app-conteudo').hidden = false;
+      inicializarPainel();
+    }
+
+    function inicializarPainel() {
+      if (!painelDesbloqueado) return;
+      try {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const badge = document.getElementById('status-conexao');
         badge.textContent = 'Conectado';
         badge.className = 'text-xs px-3 py-1 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-medium';
-        
+
         document.getElementById('custo-data').valueAsDate = new Date();
-        carregarDados(); 
+        carregarDados();
+      } catch (error) {
+        console.error('Erro ao conectar ao Supabase:', error);
       }
-    } catch (error) {
-      console.error('Erro ao conectar ao Supabase:', error);
     }
 
     function converterValorPlanilha(valor) {
