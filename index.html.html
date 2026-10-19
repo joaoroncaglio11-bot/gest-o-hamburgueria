@@ -258,7 +258,7 @@
       </div>
 
       <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
-        <p class="text-sm text-slate-400 font-medium">Custos Totais</p>
+        <p class="text-sm text-slate-400 font-medium">Despesas Totais (inclui entrega)</p>
         <p class="text-2xl font-bold text-rose-400 mt-1" id="kpi-custos">R$ 0,00</p>
       </div>
 
@@ -826,14 +826,15 @@
         totalCustos += Number(c.valor) || 0;
       });
 
-      const lucroLiquido = faturamento - totalCustos;
+      const despesasTotais = totalCustos + taxasEntrega;
+      const lucroLiquido = faturamento - despesasTotais;
       const qtdVendas = vendas.length;
       const ticketMedio = qtdVendas > 0 ? faturamento / qtdVendas : 0;
 
       const moeda = val => Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
       document.getElementById('kpi-faturamento').textContent = moeda(faturamento);
-      document.getElementById('kpi-custos').textContent = moeda(totalCustos);
+      document.getElementById('kpi-custos').textContent = moeda(despesasTotais);
       document.getElementById('kpi-taxas-maquina').textContent = moeda(taxasMaquina);
       document.getElementById('kpi-lucro').textContent = moeda(lucroLiquido);
       document.getElementById('kpi-taxas-entrega').textContent = moeda(taxasEntrega);
