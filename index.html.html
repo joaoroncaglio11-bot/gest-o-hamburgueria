@@ -442,6 +442,7 @@
   <script>
     const SUPABASE_URL = 'https://dinwdrwdeceoruccnuly.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_TU6HaVhbZwu7iFY7O3Io9w_wGeQ4aBI'; 
+    const EMPRESA_ID = '9299d1fd-f54d-4f2b-bdd8-5161e795bebc';
     const TAXA_MAQUINA_CARTAO = 0.0489;
     const SENHA_PAINEL = '2134';
 
@@ -554,6 +555,7 @@
               
               if (colunas.length >= 8 && colunas[0] && colunas[0].match(/^\d+$/)) {
                 dadosParaInserir.push({
+                  empresa_id: EMPRESA_ID,
                   numero_pedido: '#' + colunas[0],
                   data_hora: colunas[1] || '-',
                   cliente: colunas[2] || '-',
@@ -614,7 +616,7 @@
       const dataFormatada = `${partes[2]}/${partes[1]}/${partes[0]}`;
 
       const { error } = await supabaseClient.from('custos').insert([
-        { descricao: desc, categoria: cat, valor: valor, data: dataFormatada }
+        { empresa_id: EMPRESA_ID, descricao: desc, categoria: cat, valor: valor, data: dataFormatada }
       ]);
 
       if (error) {
