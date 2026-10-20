@@ -340,7 +340,7 @@
     </section>
 
     <!-- GRID DE IMPORTAÇÃO E CADASTRO DE CUSTOS -->
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
       
       <!-- IMPORTAR EXCEL -->
       <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
@@ -381,6 +381,35 @@
         </button>
         <div id="status-custo" class="text-sm text-slate-300 font-medium"></div>
       </div>
+
+      <!-- CADASTRAR VENDA MANUAL -->
+      <form onsubmit="adicionarVenda(event)" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+        <h2 class="text-lg font-semibold text-slate-200">Registar Venda</h2>
+        <p class="text-sm text-slate-400">Adiciona uma venda avulsa ao histórico e aos relatórios.</p>
+
+        <div class="space-y-3">
+          <label for="venda-desc" class="sr-only">Descrição da venda</label>
+          <input type="text" id="venda-desc" placeholder="Descrição da venda" required
+            class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+          <label for="venda-pagamento" class="sr-only">Forma de pagamento</label>
+          <select id="venda-pagamento" required
+            class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+            <option value="">Forma de pagamento</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Pix">Pix</option>
+            <option value="Cartão de crédito">Cartão de crédito</option>
+            <option value="Cartão de débito">Cartão de débito</option>
+            <option value="Outros">Outros</option>
+          </select>
+          <label for="venda-valor" class="sr-only">Valor total da venda</label>
+          <input type="number" step="0.01" min="0.01" id="venda-valor" placeholder="Valor total (R$)" required
+            class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+        </div>
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 rounded-lg text-sm transition-colors cursor-pointer">
+          Adicionar Venda
+        </button>
+        <div id="status-venda" class="text-sm text-slate-300 font-medium" role="status" aria-live="polite"></div>
+      </form>
 
     </section>
 
@@ -629,6 +658,45 @@
       }
     }
 
+    async function adicionarVenda(event) {
+      event.preventDefault();
+      const descricao = document.getElementById('venda-desc').value.trim();
+      const pagamento = document.getElementById('venda-pagamento').value;
+      const total = Number(document.getElementById('venda-valor').value);
+      const statusDiv = document.getElementById('status-venda');
+
+      if (!descricao || !pagamento || !Number.isFinite(total) || total <= 0) {
+        statusDiv.textContent = 'Preenche a descrição, a forma de pagamento e um valor total válido.';
+        return;
+      }
+
+      try {
+        const { error } = await supabaseClient.from('vendas').insert([{
+          empresa_id: EMPRESA_ID,
+          numero_pedido: 'Manual',
+          data_hora: new Date().toLocaleString('pt-BR'),
+          cliente: '-',
+          pagamento,
+          total,
+          taxa: 0,
+          itens: descricao
+        }]);
+
+        if (error) {
+          statusDiv.textContent = 'Erro ao salvar venda: ' + error.message;
+          return;
+        }
+
+        statusDiv.textContent = 'Venda registada com sucesso!';
+        document.getElementById('venda-desc').value = '';
+        document.getElementById('venda-pagamento').value = '';
+        document.getElementById('venda-valor').value = '';
+        await carregarDados();
+      } catch (error) {
+        statusDiv.textContent = 'Erro ao salvar venda: ' + error.message;
+      }
+    }
+
     function normalizarDataFiltro(valor) {
       if (!valor) return null;
       const texto = String(valor).trim();
@@ -746,11 +814,11 @@
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-750 transition-colors';
         tr.innerHTML = `
-          <td class="p-3 font-medium text-slate-200">${v.numero_pedido || '-'}</td>
-          <td class="p-3 text-slate-400 text-xs">${v.data_hora || '-'}</td>
-          <td class="p-3 text-slate-200">${v.cliente || '-'}</td>
-          <td class="p-3 text-slate-300 text-xs">${v.itens || '-'}</td>
-          <td class="p-3 text-slate-300">${v.pagamento || '-'}</td>
+          <td class="p-3 font-medium text-slate-200">${escaparHTML(v.numero_pedido || '-')}</td>
+          <td class="p-3 text-slate-400 text-xs">${escaparHTML(v.data_hora || '-')}</td>
+          <td class="p-3 text-slate-200">${escaparHTML(v.cliente || '-')}</td>
+          <td class="p-3 text-slate-300 text-xs">${escaparHTML(v.itens || '-')}</td>
+          <td class="p-3 text-slate-300">${escaparHTML(v.pagamento || '-')}</td>
           <td class="p-3 text-right text-rose-400">${taxaMaquina.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
           <td class="p-3 text-right text-cyan-400">${Number(v.taxa || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
           <td class="p-3 text-right font-bold text-amber-400">${Number(v.total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
