@@ -247,7 +247,19 @@
 
   <!-- CONTEÚDO PRINCIPAL -->
   <main id="app-conteudo" hidden class="max-w-screen-2xl mx-auto p-4 md:p-6 space-y-6">
+    <nav class="flex flex-wrap gap-2 border-b border-slate-700 pb-3" aria-label="Seções do painel">
+      <button id="aba-financeiro" type="button" aria-selected="true" onclick="mostrarSecaoPainel('financeiro')" class="bg-amber-600 hover:bg-amber-700 text-white font-medium px-4 py-2 rounded-lg text-sm cursor-pointer">
+        Financeiro
+      </button>
+      <button id="aba-insumos" type="button" aria-selected="false" onclick="mostrarSecaoPainel('insumos')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium px-4 py-2 rounded-lg text-sm cursor-pointer">
+        Insumos
+      </button>
+      <button id="aba-fichas" type="button" aria-selected="false" onclick="mostrarSecaoPainel('fichas')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium px-4 py-2 rounded-lg text-sm cursor-pointer">
+        Fichas Técnicas
+      </button>
+    </nav>
 
+    <div id="painel-financeiro" class="space-y-6">
     <h2 class="text-lg font-semibold text-slate-200">Resumo do mês atual</h2>
 
     <!-- CARDS DE RESUMO (KPIs) -->
@@ -464,6 +476,301 @@
         </div>
       </div>
     </section>
+    </div>
+
+    <section id="painel-insumos" hidden class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-semibold text-slate-100">Cadastro de Insumos</h2>
+          <p class="text-sm text-slate-400 mt-1">Ingredientes, bebidas, embalagens e materiais. A quantidade de referência serve para calcular o custo e não representa o saldo de estoque.</p>
+        </div>
+        <div class="flex gap-2">
+          <button id="botao-atualizar-insumos" type="button" onclick="carregarInsumos()" hidden class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm cursor-pointer">
+            Atualizar lista
+          </button>
+          <button id="botao-sair-insumos" type="button" onclick="sairInsumos()" hidden class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-sm cursor-pointer">
+            Sair do módulo
+          </button>
+        </div>
+      </div>
+
+      <div id="insumos-login" class="max-w-lg bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+        <div>
+          <h3 class="font-semibold text-slate-200">Acesso protegido</h3>
+          <p class="text-sm text-slate-400 mt-1">Entre com a conta administrativa criada no Supabase Auth. Este acesso é separado do login financeiro.</p>
+        </div>
+        <form onsubmit="entrarInsumos(event)" class="space-y-3">
+          <div>
+            <label for="insumos-email" class="block text-sm text-slate-300 mb-1">E-mail</label>
+            <input id="insumos-email" type="email" autocomplete="username" required class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-3 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label for="insumos-senha" class="block text-sm text-slate-300 mb-1">Senha</label>
+            <input id="insumos-senha" type="password" autocomplete="current-password" required class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-3 focus:outline-none focus:border-amber-500">
+          </div>
+          <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 rounded-lg text-sm cursor-pointer">
+            Entrar no módulo de insumos
+          </button>
+        </form>
+        <p id="status-login-insumos" class="text-sm text-slate-300" role="status" aria-live="polite"></p>
+      </div>
+
+      <div id="insumos-conteudo" hidden class="space-y-6">
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <form id="form-insumo" onsubmit="salvarInsumo(event)" class="xl:col-span-1 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+            <div class="flex items-center justify-between gap-2">
+              <h3 id="titulo-form-insumo" class="text-lg font-semibold text-slate-200">Novo insumo</h3>
+              <button id="botao-cancelar-edicao-insumo" type="button" onclick="limparFormularioInsumo()" hidden class="text-sm text-slate-400 hover:text-slate-200 cursor-pointer">
+                Cancelar edição
+              </button>
+            </div>
+
+            <div>
+              <label for="insumo-nome" class="block text-sm text-slate-300 mb-1">Nome</label>
+              <input id="insumo-nome" type="text" maxlength="120" required class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="insumo-categoria" class="block text-sm text-slate-300 mb-1">Categoria</label>
+                <select id="insumo-categoria" required class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+                  <option value="ingrediente">Ingrediente</option>
+                  <option value="bebida">Bebida</option>
+                  <option value="embalagem">Embalagem</option>
+                  <option value="material">Material</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </div>
+              <div>
+                <label for="insumo-unidade" class="block text-sm text-slate-300 mb-1">Unidade de compra</label>
+                <select id="insumo-unidade" required onchange="atualizarPreviaCustoInsumo()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+                  <option value="kg">Quilo (kg)</option>
+                  <option value="g">Grama (g)</option>
+                  <option value="L">Litro (L)</option>
+                  <option value="ml">Mililitro (ml)</option>
+                  <option value="unidade">Unidade</option>
+                </select>
+              </div>
+              <div>
+                <label for="insumo-quantidade" class="block text-sm text-slate-300 mb-1">Quantidade de referência</label>
+                <input id="insumo-quantidade" type="number" min="0.000001" step="any" required oninput="atualizarPreviaCustoInsumo()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+              </div>
+              <div>
+                <label for="insumo-valor" class="block text-sm text-slate-300 mb-1">Valor pago (R$)</label>
+                <input id="insumo-valor" type="number" min="0" step="0.01" required oninput="atualizarPreviaCustoInsumo()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+              </div>
+              <div class="sm:col-span-2">
+                <label for="insumo-estoque-minimo" class="block text-sm text-slate-300 mb-1">Estoque mínimo futuro</label>
+                <input id="insumo-estoque-minimo" type="number" min="0" step="any" value="0" required class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+                <p id="unidade-estoque-minimo" class="text-xs text-slate-500 mt-1">Informe na unidade-base.</p>
+              </div>
+            </div>
+
+            <div class="bg-slate-900 rounded-lg p-4 border border-slate-700">
+              <p class="text-sm font-medium text-slate-300 mb-2">Custo calculado da referência</p>
+              <div id="previa-custo-insumo" class="text-sm text-slate-400">Preencha quantidade e valor para calcular.</div>
+            </div>
+
+            <button id="botao-salvar-insumo" type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 rounded-lg text-sm cursor-pointer">
+              Cadastrar insumo
+            </button>
+            <p id="status-form-insumo" class="text-sm text-slate-300" role="status" aria-live="polite"></p>
+          </form>
+
+          <div class="xl:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+              <div>
+                <h3 class="text-lg font-semibold text-slate-200">Insumos cadastrados</h3>
+                <p id="total-insumos" class="text-sm text-slate-400 mt-1">Carregando...</p>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <label for="filtro-status-insumos" class="sr-only">Filtrar status</label>
+                <select id="filtro-status-insumos" onchange="renderizarInsumos()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2">
+                  <option value="ativos">Ativos</option>
+                  <option value="inativos">Inativos</option>
+                  <option value="todos">Todos</option>
+                </select>
+                <label for="pesquisa-insumos" class="sr-only">Pesquisar insumos</label>
+                <input id="pesquisa-insumos" type="search" placeholder="Pesquisar insumo..." oninput="renderizarInsumos()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2">
+              </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-700">
+              <table class="w-full text-left text-sm text-slate-300">
+                <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+                  <tr>
+                    <th class="p-3">Insumo</th>
+                    <th class="p-3">Referência</th>
+                    <th class="p-3 text-right">Custo / base</th>
+                    <th class="p-3 text-right">Estoque mínimo</th>
+                    <th class="p-3 text-center">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabela-insumos" class="divide-y divide-slate-700">
+                  <tr><td colspan="5" class="p-4 text-center text-slate-500">Entre no módulo para carregar os insumos.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p id="status-lista-insumos" class="text-sm text-slate-300" role="status" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <section id="historico-insumo" hidden class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h3 class="text-lg font-semibold text-slate-200">Histórico de preços</h3>
+              <p id="titulo-historico-insumo" class="text-sm text-slate-400"></p>
+            </div>
+            <button type="button" onclick="fecharHistoricoInsumo()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm cursor-pointer">
+              Fechar
+            </button>
+          </div>
+          <div class="overflow-x-auto rounded-lg border border-slate-700">
+            <table class="w-full text-left text-sm text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+                <tr><th class="p-3">Data</th><th class="p-3">Referência</th><th class="p-3 text-right">Valor pago</th><th class="p-3 text-right">Custo por base</th></tr>
+              </thead>
+              <tbody id="tabela-historico-insumo" class="divide-y divide-slate-700">
+                <tr><td colspan="4" class="p-4 text-center text-slate-500">Carregando histórico...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p id="status-historico-insumo" class="text-sm text-slate-300" role="status" aria-live="polite"></p>
+        </section>
+      </div>
+    </section>
+
+    <section id="painel-fichas" hidden class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-semibold text-slate-100">Fichas Técnicas</h2>
+          <p class="text-sm text-slate-400 mt-1">Monte receitas usando insumos ativos. O custo acompanha os preços atuais cadastrados; quantidades em g, ml ou unidade não representam saldo de estoque.</p>
+        </div>
+        <button type="button" onclick="carregarFichasTecnicas()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm cursor-pointer">
+          Atualizar fichas
+        </button>
+      </div>
+
+      <div id="fichas-login" class="max-w-lg bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm">
+        <p class="text-sm text-slate-300">O acesso às fichas técnicas exige uma sessão Supabase Auth autorizada para a empresa. Entre primeiro pela seção Insumos.</p>
+      </div>
+
+      <div id="fichas-conteudo" hidden class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <form id="form-ficha" onsubmit="salvarFichaTecnica(event)" class="xl:col-span-1 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+          <div class="flex items-center justify-between gap-2">
+            <h3 id="titulo-form-ficha" class="text-lg font-semibold text-slate-200">Novo produto</h3>
+            <button id="botao-cancelar-ficha" type="button" onclick="limparFormularioFicha()" hidden class="text-sm text-slate-400 hover:text-slate-200 cursor-pointer">
+              Cancelar edição
+            </button>
+          </div>
+
+          <div>
+            <label for="ficha-nome" class="block text-sm text-slate-300 mb-1">Nome do produto</label>
+            <input id="ficha-nome" type="text" maxlength="120" required class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label for="ficha-categoria" class="block text-sm text-slate-300 mb-1">Categoria</label>
+            <input id="ficha-categoria" type="text" maxlength="80" value="hamburguer" required class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label for="ficha-descricao" class="block text-sm text-slate-300 mb-1">Descrição (opcional)</label>
+            <textarea id="ficha-descricao" rows="2" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500"></textarea>
+          </div>
+          <div>
+            <label for="ficha-preco-venda" class="block text-sm text-slate-300 mb-1">Preço de venda (R$)</label>
+            <input id="ficha-preco-venda" type="number" min="0" step="0.01" value="0" required oninput="atualizarResumoFicha()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <h4 class="font-medium text-slate-200">Composição</h4>
+              <p class="text-xs text-slate-400">Inclua ingredientes e embalagens na unidade-base do insumo.</p>
+            </div>
+            <div id="componentes-ficha" class="space-y-3"></div>
+            <button id="botao-adicionar-componente-ficha" type="button" onclick="adicionarComponenteFicha()" class="w-full sm:w-auto bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg text-sm cursor-pointer">
+              + Insumo
+            </button>
+          </div>
+
+          <div class="bg-slate-900 rounded-lg p-4 border border-slate-700 space-y-2">
+            <div class="flex justify-between gap-3 text-sm">
+              <span class="text-slate-400">Custo de produção</span>
+              <strong id="resumo-custo-ficha" class="text-amber-400">R$ 0,00</strong>
+            </div>
+            <div class="flex justify-between gap-3 text-sm">
+              <span class="text-slate-400">Lucro bruto estimado</span>
+              <strong id="resumo-lucro-ficha" class="text-emerald-400">R$ 0,00</strong>
+            </div>
+            <div class="flex justify-between gap-3 text-sm">
+              <span class="text-slate-400">Margem sobre preço</span>
+              <strong id="resumo-margem-ficha" class="text-cyan-400">—</strong>
+            </div>
+            <p class="text-xs text-slate-500">Estimativa antes de taxas, impostos e despesas operacionais.</p>
+          </div>
+
+          <button id="botao-salvar-ficha" type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 rounded-lg text-sm cursor-pointer">
+            Cadastrar ficha técnica
+          </button>
+          <p id="status-form-ficha" class="text-sm text-slate-300" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="xl:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+            <div>
+              <h3 class="text-lg font-semibold text-slate-200">Produtos cadastrados</h3>
+              <p id="total-fichas" class="text-sm text-slate-400 mt-1">Carregando...</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <label for="filtro-status-fichas" class="sr-only">Filtrar fichas por status</label>
+              <select id="filtro-status-fichas" onchange="renderizarFichasTecnicas()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2">
+                <option value="ativos">Ativos</option>
+                <option value="inativos">Inativos</option>
+                <option value="todos">Todos</option>
+              </select>
+              <label for="pesquisa-fichas" class="sr-only">Pesquisar produtos</label>
+              <input id="pesquisa-fichas" type="search" placeholder="Pesquisar produto..." oninput="renderizarFichasTecnicas()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2">
+            </div>
+          </div>
+          <div class="overflow-x-auto rounded-lg border border-slate-700">
+            <table class="w-full text-left text-sm text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+                <tr>
+                  <th class="p-3">Produto</th>
+                  <th class="p-3 text-right">Custo</th>
+                  <th class="p-3 text-right">Preço</th>
+                  <th class="p-3 text-right">Lucro / margem</th>
+                  <th class="p-3 text-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabela-fichas" class="divide-y divide-slate-700">
+                <tr><td colspan="5" class="p-4 text-center text-slate-500">Entre com uma sessão autorizada para carregar fichas.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p id="status-lista-fichas" class="text-sm text-slate-300" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <section id="detalhe-ficha" hidden class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h3 class="text-lg font-semibold text-slate-200">Composição do produto</h3>
+            <p id="titulo-detalhe-ficha" class="text-sm text-slate-400"></p>
+          </div>
+          <button type="button" onclick="fecharDetalheFicha()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm cursor-pointer">
+            Fechar
+          </button>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-slate-700">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+              <tr><th class="p-3">Insumo</th><th class="p-3 text-right">Quantidade</th><th class="p-3 text-right">Custo atual</th></tr>
+            </thead>
+            <tbody id="tabela-detalhe-ficha" class="divide-y divide-slate-700"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
 
   </main>
 
@@ -476,6 +783,15 @@
     const SENHA_PAINEL = '2134';
 
     let supabaseClient = null;
+    let supabaseInsumosClient = null;
+    let sessaoInsumos = null;
+    let empresaInsumosAutorizada = false;
+    let versaoSessaoInsumos = 0;
+    let listaInsumos = [];
+    let insumoEmEdicao = null;
+    let listaFichas = [];
+    let composicaoFichas = [];
+    let fichaEmEdicao = null;
     let painelDesbloqueado = false;
 
     function definirTema(tema) {
@@ -530,9 +846,1000 @@
 
         document.getElementById('custo-data').valueAsDate = new Date();
         carregarDados();
+        inicializarClienteInsumos();
       } catch (error) {
         console.error('Erro ao conectar ao Supabase:', error);
       }
+    }
+
+    function mostrarSecaoPainel(secao) {
+      const financeiro = secao !== 'insumos';
+      const insumos = secao === 'insumos';
+      const secoes = [
+        ['financeiro', 'painel-financeiro', 'aba-financeiro'],
+        ['insumos', 'painel-insumos', 'aba-insumos'],
+        ['fichas', 'painel-fichas', 'aba-fichas']
+      ];
+
+      secoes.forEach(([nome, painelId, abaId]) => {
+        const ativo = secao === nome;
+        const aba = document.getElementById(abaId);
+        document.getElementById(painelId).hidden = !ativo;
+        aba.setAttribute('aria-selected', String(ativo));
+        aba.className = ativo
+          ? 'bg-amber-600 hover:bg-amber-700 text-white font-medium px-4 py-2 rounded-lg text-sm cursor-pointer'
+          : 'bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium px-4 py-2 rounded-lg text-sm cursor-pointer';
+      });
+
+      if (!financeiro && sessaoInsumos && empresaInsumosAutorizada) {
+        if (insumos && !listaInsumos.length) void carregarInsumos();
+        if (!insumos && !listaFichas.length) void carregarFichasTecnicas();
+      }
+    }
+
+    function inicializarClienteInsumos() {
+      try {
+        supabaseInsumosClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+          auth: {
+            storageKey: 'nobre-burger-insumos-auth',
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: false
+          }
+        });
+
+        supabaseInsumosClient.auth.onAuthStateChange((_evento, sessao) => {
+          sessaoInsumos = sessao;
+          window.setTimeout(() => {
+            void atualizarAcessoInsumos(sessao).catch(error => {
+              console.error('Erro ao verificar acesso ao módulo de insumos:', error);
+              document.getElementById('status-login-insumos').textContent =
+                'Erro ao verificar acesso. Tente atualizar a página.';
+            });
+          }, 0);
+        });
+
+        supabaseInsumosClient.auth.getSession().then(({ data, error }) => {
+          if (error) throw error;
+          sessaoInsumos = data.session;
+          return atualizarAcessoInsumos(data.session);
+        }).catch(error => {
+          console.error('Erro ao restaurar sessão do módulo de insumos:', error);
+          document.getElementById('status-login-insumos').textContent =
+            'Não foi possível verificar a sessão. Atualize a página e tente novamente.';
+        });
+      } catch (error) {
+        console.error('Erro ao inicializar autenticação de insumos:', error);
+        document.getElementById('status-login-insumos').textContent =
+          'Não foi possível inicializar o acesso seguro ao módulo de insumos.';
+      }
+    }
+
+    async function atualizarAcessoInsumos(sessao) {
+      const versaoAtual = ++versaoSessaoInsumos;
+      const login = document.getElementById('insumos-login');
+      const conteudo = document.getElementById('insumos-conteudo');
+      const fichasLogin = document.getElementById('fichas-login');
+      const fichasConteudo = document.getElementById('fichas-conteudo');
+      const status = document.getElementById('status-login-insumos');
+      const botaoSair = document.getElementById('botao-sair-insumos');
+      const botaoAtualizar = document.getElementById('botao-atualizar-insumos');
+
+      if (!sessao) {
+        empresaInsumosAutorizada = false;
+        limparDadosInsumos();
+        login.hidden = false;
+        conteudo.hidden = true;
+        fichasLogin.hidden = false;
+        fichasConteudo.hidden = true;
+        botaoSair.hidden = true;
+        botaoAtualizar.hidden = true;
+        status.textContent = 'Entre com uma conta Supabase Auth vinculada à empresa para consultar os insumos.';
+        renderizarInsumos();
+        return;
+      }
+
+      status.textContent = 'Verificando acesso à empresa...';
+      const { data, error } = await supabaseInsumosClient
+        .from('usuario_empresa')
+        .select('empresa_id')
+        .eq('user_id', sessao.user.id)
+        .eq('empresa_id', EMPRESA_ID)
+        .maybeSingle();
+
+      if (versaoAtual !== versaoSessaoInsumos || sessaoInsumos?.user.id !== sessao.user.id) return;
+
+      if (error) {
+        empresaInsumosAutorizada = false;
+        limparDadosInsumos();
+        login.hidden = false;
+        conteudo.hidden = true;
+        fichasLogin.hidden = false;
+        fichasConteudo.hidden = true;
+        botaoSair.hidden = false;
+        botaoAtualizar.hidden = true;
+        status.textContent = 'Erro ao verificar o vínculo com a empresa: ' + error.message;
+        return;
+      }
+
+      if (!data) {
+        empresaInsumosAutorizada = false;
+        limparDadosInsumos();
+        login.hidden = false;
+        conteudo.hidden = true;
+        fichasLogin.hidden = false;
+        fichasConteudo.hidden = true;
+        botaoSair.hidden = false;
+        botaoAtualizar.hidden = true;
+        status.textContent = 'Esta conta está autenticada, mas não tem vínculo autorizado com a empresa do Nobre Burger.';
+        return;
+      }
+
+      empresaInsumosAutorizada = true;
+      login.hidden = true;
+      conteudo.hidden = false;
+      fichasLogin.hidden = true;
+      fichasConteudo.hidden = false;
+      botaoSair.hidden = false;
+      botaoAtualizar.hidden = false;
+      status.textContent = '';
+      await carregarInsumos();
+    }
+
+    function limparDadosInsumos() {
+      listaInsumos = [];
+      insumoEmEdicao = null;
+      listaFichas = [];
+      composicaoFichas = [];
+      fichaEmEdicao = null;
+      fecharHistoricoInsumo();
+      document.getElementById('titulo-historico-insumo').textContent = '';
+      document.getElementById('tabela-historico-insumo').replaceChildren();
+      limparFormularioInsumo();
+      renderizarInsumos();
+      limparFormularioFicha();
+      renderizarFichasTecnicas();
+      fecharDetalheFicha();
+    }
+
+    async function entrarInsumos(event) {
+      event.preventDefault();
+      const status = document.getElementById('status-login-insumos');
+      const email = document.getElementById('insumos-email').value.trim();
+      const password = document.getElementById('insumos-senha').value;
+
+      if (!supabaseInsumosClient) {
+        status.textContent = 'O módulo de autenticação ainda não está disponível. Atualize a página.';
+        return;
+      }
+
+      status.textContent = 'Autenticando...';
+      try {
+        const { error } = await supabaseInsumosClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          status.textContent = 'Não foi possível entrar: ' + error.message;
+          return;
+        }
+      } catch (error) {
+        status.textContent = 'Falha de comunicação durante o login: ' + error.message;
+        return;
+      }
+
+      document.getElementById('insumos-senha').value = '';
+      status.textContent = 'Login realizado. Verificando autorização da empresa...';
+    }
+
+    async function sairInsumos() {
+      if (!supabaseInsumosClient) return;
+      try {
+        const { error } = await supabaseInsumosClient.auth.signOut();
+        if (error) {
+          document.getElementById('status-login-insumos').textContent =
+            'Erro ao sair do módulo de insumos: ' + error.message;
+        }
+      } catch (error) {
+        document.getElementById('status-login-insumos').textContent =
+          'Falha de comunicação ao sair do módulo de insumos: ' + error.message;
+      }
+    }
+
+    function formatarMoeda(valor) {
+      return Number(valor || 0).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
+    }
+
+    function formatarCustoUnitario(valor, unidadeBase) {
+      const casasDecimais = unidadeBase === 'g' || unidadeBase === 'ml' ? 6 : 2;
+      return Number(valor || 0).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: casasDecimais,
+        maximumFractionDigits: casasDecimais
+      });
+    }
+
+    function unidadeBaseInsumo(unidade) {
+      if (unidade === 'kg' || unidade === 'g') return 'g';
+      if (unidade === 'L' || unidade === 'ml') return 'ml';
+      return 'unidade';
+    }
+
+    function atualizarPreviaCustoInsumo() {
+      const unidade = document.getElementById('insumo-unidade').value;
+      const quantidade = Number(document.getElementById('insumo-quantidade').value);
+      const valor = Number(document.getElementById('insumo-valor').value);
+      const base = unidadeBaseInsumo(unidade);
+      const fator = unidade === 'kg' || unidade === 'L' ? 1000 : 1;
+      const quantidadeBase = quantidade * fator;
+      const unidadeMinimo = document.getElementById('unidade-estoque-minimo');
+      const previa = document.getElementById('previa-custo-insumo');
+
+      unidadeMinimo.textContent = `Informe o mínimo em ${base}; isso não representa o saldo atual.`;
+      if (!Number.isFinite(quantidade) || quantidade <= 0 || !Number.isFinite(valor) || valor < 0) {
+        previa.textContent = 'Preencha quantidade e valor para calcular.';
+        return;
+      }
+
+      const custoBase = valor / quantidadeBase;
+      const linhas = [`${formatarCustoUnitario(custoBase, base)} por ${base}`];
+      if (base === 'g') linhas.push(`${formatarMoeda(custoBase * 1000)} por kg`);
+      if (base === 'ml') linhas.push(`${formatarMoeda(custoBase * 1000)} por litro`);
+      previa.textContent = linhas.join(' · ');
+    }
+
+    function validarFormularioInsumo() {
+      const nome = document.getElementById('insumo-nome').value.trim();
+      const categoria = document.getElementById('insumo-categoria').value;
+      const unidade = document.getElementById('insumo-unidade').value;
+      const quantidade = Number(document.getElementById('insumo-quantidade').value);
+      const valor = Number(document.getElementById('insumo-valor').value);
+      const estoqueMinimo = Number(document.getElementById('insumo-estoque-minimo').value);
+      const categorias = ['ingrediente', 'bebida', 'embalagem', 'material', 'outro'];
+      const unidades = ['kg', 'g', 'L', 'ml', 'unidade'];
+
+      if (!nome) return 'Informe o nome do insumo.';
+      if (!categorias.includes(categoria)) return 'Selecione uma categoria válida.';
+      if (!unidades.includes(unidade)) return 'Selecione uma unidade de compra válida.';
+      if (!Number.isFinite(quantidade) || quantidade <= 0) return 'A quantidade de referência deve ser maior que zero.';
+      if (!Number.isFinite(valor) || valor < 0) return 'O valor pago deve ser zero ou maior.';
+      if (!Number.isFinite(estoqueMinimo) || estoqueMinimo < 0) return 'O estoque mínimo deve ser zero ou maior.';
+      return null;
+    }
+
+    async function salvarInsumo(event) {
+      event.preventDefault();
+      const status = document.getElementById('status-form-insumo');
+      const erroValidacao = validarFormularioInsumo();
+      if (erroValidacao) {
+        status.textContent = erroValidacao;
+        return;
+      }
+      if (!sessaoInsumos || !empresaInsumosAutorizada) {
+        status.textContent = 'Entre com uma conta autorizada antes de salvar.';
+        return;
+      }
+
+      const dados = {
+        empresa_id: EMPRESA_ID,
+        nome: document.getElementById('insumo-nome').value.trim(),
+        categoria: document.getElementById('insumo-categoria').value,
+        unidade_compra: document.getElementById('insumo-unidade').value,
+        quantidade_referencia: Number(document.getElementById('insumo-quantidade').value),
+        valor_pago: Number(document.getElementById('insumo-valor').value),
+        estoque_minimo: Number(document.getElementById('insumo-estoque-minimo').value)
+      };
+
+      const editando = Boolean(insumoEmEdicao);
+      status.textContent = editando ? 'Salvando alterações...' : 'Cadastrando insumo...';
+      let resultado;
+      try {
+        if (insumoEmEdicao) {
+          resultado = await supabaseInsumosClient
+            .from('insumos')
+            .update(dados)
+            .eq('id', insumoEmEdicao)
+            .eq('empresa_id', EMPRESA_ID);
+        } else {
+          resultado = await supabaseInsumosClient.from('insumos').insert(dados);
+        }
+      } catch (error) {
+        status.textContent = 'Falha de comunicação ao salvar o insumo: ' + error.message;
+        return;
+      }
+
+      if (resultado.error) {
+        status.textContent = resultado.error.code === '23505'
+          ? 'Já existe um insumo com esse nome nesta empresa.'
+          : 'Erro ao salvar insumo: ' + resultado.error.message;
+        return;
+      }
+
+      limparFormularioInsumo();
+      status.textContent = editando ? 'Insumo atualizado com sucesso.' : 'Insumo cadastrado com sucesso.';
+      await carregarInsumos();
+    }
+
+    function limparFormularioInsumo() {
+      insumoEmEdicao = null;
+      document.getElementById('form-insumo').reset();
+      document.getElementById('insumo-estoque-minimo').value = '0';
+      document.getElementById('titulo-form-insumo').textContent = 'Novo insumo';
+      document.getElementById('botao-salvar-insumo').textContent = 'Cadastrar insumo';
+      document.getElementById('botao-cancelar-edicao-insumo').hidden = true;
+      document.getElementById('status-form-insumo').textContent = '';
+      atualizarPreviaCustoInsumo();
+    }
+
+    function editarInsumo(id) {
+      const insumo = listaInsumos.find(item => item.id === id);
+      if (!insumo) {
+        document.getElementById('status-lista-insumos').textContent = 'O insumo selecionado não está mais na lista. Atualize os dados.';
+        return;
+      }
+
+      insumoEmEdicao = insumo.id;
+      document.getElementById('insumo-nome').value = insumo.nome;
+      document.getElementById('insumo-categoria').value = insumo.categoria;
+      document.getElementById('insumo-unidade').value = insumo.unidade_compra;
+      document.getElementById('insumo-quantidade').value = insumo.quantidade_referencia;
+      document.getElementById('insumo-valor').value = insumo.valor_pago;
+      document.getElementById('insumo-estoque-minimo').value = insumo.estoque_minimo;
+      document.getElementById('titulo-form-insumo').textContent = 'Editar insumo';
+      document.getElementById('botao-salvar-insumo').textContent = 'Salvar alterações';
+      document.getElementById('botao-cancelar-edicao-insumo').hidden = false;
+      document.getElementById('status-form-insumo').textContent = '';
+      atualizarPreviaCustoInsumo();
+      document.getElementById('form-insumo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function alternarStatusInsumo(id) {
+      if (!sessaoInsumos || !empresaInsumosAutorizada) {
+        document.getElementById('status-lista-insumos').textContent = 'Sua sessão expirou. Entre novamente para continuar.';
+        return;
+      }
+      const insumo = listaInsumos.find(item => item.id === id);
+      if (!insumo) return;
+
+      const novoStatus = !insumo.ativo;
+      const verbo = novoStatus ? 'reativar' : 'desativar';
+      if (!window.confirm(`Deseja ${verbo} o insumo "${insumo.nome}"?`)) return;
+
+      let error;
+      try {
+        ({ error } = await supabaseInsumosClient
+          .from('insumos')
+          .update({ ativo: novoStatus })
+          .eq('id', insumo.id)
+          .eq('empresa_id', EMPRESA_ID));
+      } catch (requestError) {
+        document.getElementById('status-lista-insumos').textContent =
+          `Falha de comunicação ao ${verbo} insumo: ${requestError.message}`;
+        return;
+      }
+
+      if (error) {
+        document.getElementById('status-lista-insumos').textContent = `Erro ao ${verbo} insumo: ${error.message}`;
+        return;
+      }
+      await carregarInsumos();
+      document.getElementById('status-lista-insumos').textContent =
+        novoStatus ? 'Insumo reativado.' : 'Insumo desativado. O registro foi preservado.';
+    }
+
+    async function carregarInsumos() {
+      if (!supabaseInsumosClient || !sessaoInsumos || !empresaInsumosAutorizada) return;
+      const tbody = document.getElementById('tabela-insumos');
+      const status = document.getElementById('status-lista-insumos');
+      tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">Carregando insumos...</td></tr>';
+      status.textContent = '';
+
+      let data, error;
+      try {
+        ({ data, error } = await supabaseInsumosClient
+          .from('insumos')
+          .select('id, empresa_id, nome, categoria, unidade_compra, quantidade_referencia, valor_pago, unidade_base, quantidade_base, custo_por_unidade_base, estoque_minimo, ativo, criado_em, atualizado_em')
+          .eq('empresa_id', EMPRESA_ID)
+          .order('nome', { ascending: true }));
+      } catch (requestError) {
+        listaInsumos = [];
+        renderizarInsumos();
+        status.textContent = 'Falha de comunicação ao carregar insumos: ' + requestError.message;
+        return;
+      }
+
+      if (error) {
+        listaInsumos = [];
+        renderizarInsumos();
+        status.textContent = 'Erro ao carregar insumos: ' + error.message;
+        return;
+      }
+
+      listaInsumos = data || [];
+      renderizarInsumos();
+      if (empresaInsumosAutorizada) await carregarFichasTecnicas();
+    }
+
+    function criarCelula(texto, classes) {
+      const celula = document.createElement('td');
+      celula.className = classes;
+      celula.textContent = texto;
+      return celula;
+    }
+
+    function renderizarInsumos() {
+      const tbody = document.getElementById('tabela-insumos');
+      if (!tbody) return;
+      tbody.replaceChildren();
+
+      const filtroStatus = document.getElementById('filtro-status-insumos').value;
+      const pesquisa = document.getElementById('pesquisa-insumos').value.trim().toLocaleLowerCase('pt-BR');
+      const filtrados = listaInsumos.filter(insumo => {
+        const correspondeStatus = filtroStatus === 'todos' ||
+          (filtroStatus === 'ativos' && insumo.ativo) ||
+          (filtroStatus === 'inativos' && !insumo.ativo);
+        const correspondePesquisa = `${insumo.nome} ${insumo.categoria}`.toLocaleLowerCase('pt-BR').includes(pesquisa);
+        return correspondeStatus && correspondePesquisa;
+      });
+
+      document.getElementById('total-insumos').textContent =
+        `${filtrados.length} insumo(s) exibido(s) de ${listaInsumos.length}.`;
+
+      if (!filtrados.length) {
+        const linha = document.createElement('tr');
+        const celula = criarCelula('Nenhum insumo encontrado para este filtro.', 'p-4 text-center text-slate-500');
+        celula.colSpan = 5;
+        linha.appendChild(celula);
+        tbody.appendChild(linha);
+        return;
+      }
+
+      filtrados.forEach(insumo => {
+        const linha = document.createElement('tr');
+        linha.className = 'hover:bg-slate-700/40';
+
+        const nome = document.createElement('td');
+        nome.className = 'p-3';
+        const nomeTexto = document.createElement('div');
+        nomeTexto.className = 'font-medium text-slate-200';
+        nomeTexto.textContent = insumo.nome;
+        const detalhes = document.createElement('div');
+        detalhes.className = 'text-xs text-slate-400 mt-1';
+        detalhes.textContent = `${insumo.categoria} · ${insumo.ativo ? 'Ativo' : 'Inativo'}`;
+        nome.append(nomeTexto, detalhes);
+
+        const unidadeRef = insumo.unidade_compra;
+        const base = insumo.unidade_base;
+        const referencia = `${insumo.quantidade_referencia} ${unidadeRef} · ${formatarMoeda(insumo.valor_pago)}`;
+        const custoBase = Number(insumo.custo_por_unidade_base);
+        const custoFormatado = base === 'g'
+          ? `${formatarCustoUnitario(custoBase, base)}/g · ${formatarMoeda(custoBase * 1000)}/kg`
+          : base === 'ml'
+            ? `${formatarCustoUnitario(custoBase, base)}/ml · ${formatarMoeda(custoBase * 1000)}/L`
+            : `${formatarMoeda(custoBase)}/unidade`;
+        const estoque = `${insumo.estoque_minimo} ${base}`;
+        linha.append(
+          nome,
+          criarCelula(referencia, 'p-3 text-slate-300 whitespace-nowrap'),
+          criarCelula(custoFormatado, 'p-3 text-right text-amber-400 whitespace-nowrap'),
+          criarCelula(estoque, 'p-3 text-right text-slate-300 whitespace-nowrap')
+        );
+
+        const acoes = document.createElement('td');
+        acoes.className = 'p-3';
+        const grupo = document.createElement('div');
+        grupo.className = 'flex flex-wrap justify-center gap-2';
+        const botaoEditar = document.createElement('button');
+        botaoEditar.type = 'button';
+        botaoEditar.className = 'text-amber-400 hover:text-amber-300 underline underline-offset-2';
+        botaoEditar.textContent = 'Editar';
+        botaoEditar.addEventListener('click', () => editarInsumo(insumo.id));
+        const botaoHistorico = document.createElement('button');
+        botaoHistorico.type = 'button';
+        botaoHistorico.className = 'text-cyan-400 hover:text-cyan-300 underline underline-offset-2';
+        botaoHistorico.textContent = 'Preços';
+        botaoHistorico.addEventListener('click', () => mostrarHistoricoInsumo(insumo));
+        const botaoStatus = document.createElement('button');
+        botaoStatus.type = 'button';
+        botaoStatus.className = insumo.ativo
+          ? 'text-rose-400 hover:text-rose-300 underline underline-offset-2'
+          : 'text-emerald-400 hover:text-emerald-300 underline underline-offset-2';
+        botaoStatus.textContent = insumo.ativo ? 'Desativar' : 'Reativar';
+        botaoStatus.addEventListener('click', () => alternarStatusInsumo(insumo.id));
+        grupo.append(botaoEditar, botaoHistorico, botaoStatus);
+        acoes.appendChild(grupo);
+        linha.appendChild(acoes);
+        tbody.appendChild(linha);
+      });
+    }
+
+    async function mostrarHistoricoInsumo(insumo) {
+      const painel = document.getElementById('historico-insumo');
+      const tbody = document.getElementById('tabela-historico-insumo');
+      document.getElementById('titulo-historico-insumo').textContent = insumo.nome;
+      document.getElementById('status-historico-insumo').textContent = '';
+      tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Carregando histórico...</td></tr>';
+      painel.hidden = false;
+      painel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      let data, error;
+      try {
+        ({ data, error } = await supabaseInsumosClient
+          .from('insumo_historico_precos')
+          .select('quantidade_referencia, unidade_compra, valor_pago, unidade_base, custo_por_unidade_base, origem, registrado_em')
+          .eq('empresa_id', EMPRESA_ID)
+          .eq('insumo_id', insumo.id)
+          .order('registrado_em', { ascending: false }));
+      } catch (requestError) {
+        tbody.replaceChildren();
+        document.getElementById('status-historico-insumo').textContent =
+          'Falha de comunicação ao carregar histórico: ' + requestError.message;
+        return;
+      }
+
+      tbody.replaceChildren();
+      if (error) {
+        document.getElementById('status-historico-insumo').textContent =
+          'Erro ao carregar histórico de preços: ' + error.message;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        const linha = document.createElement('tr');
+        const celula = criarCelula('Nenhum histórico de preço encontrado.', 'p-4 text-center text-slate-500');
+        celula.colSpan = 4;
+        linha.appendChild(celula);
+        tbody.appendChild(linha);
+        return;
+      }
+
+      data.forEach(preco => {
+        const linha = document.createElement('tr');
+        const dataRegistro = new Date(preco.registrado_em).toLocaleString('pt-BR');
+        const referencia = `${preco.quantidade_referencia} ${preco.unidade_compra} · ${preco.origem}`;
+        const base = preco.unidade_base;
+        const custo = Number(preco.custo_por_unidade_base);
+        const custoFormatado = base === 'g'
+          ? `${formatarCustoUnitario(custo, base)}/g · ${formatarMoeda(custo * 1000)}/kg`
+          : base === 'ml'
+            ? `${formatarCustoUnitario(custo, base)}/ml · ${formatarMoeda(custo * 1000)}/L`
+            : `${formatarMoeda(custo)}/unidade`;
+        linha.append(
+          criarCelula(dataRegistro, 'p-3 text-slate-400 whitespace-nowrap'),
+          criarCelula(referencia, 'p-3 text-slate-300'),
+          criarCelula(formatarMoeda(preco.valor_pago), 'p-3 text-right text-slate-200 whitespace-nowrap'),
+          criarCelula(custoFormatado, 'p-3 text-right text-amber-400 whitespace-nowrap')
+        );
+        tbody.appendChild(linha);
+      });
+    }
+
+    function fecharHistoricoInsumo() {
+      document.getElementById('historico-insumo').hidden = true;
+    }
+
+    function adicionarComponenteFicha(componente = null) {
+      const container = document.getElementById('componentes-ficha');
+      const linha = document.createElement('div');
+      linha.className = 'componente-ficha bg-slate-900 p-3 rounded-lg border border-slate-700 space-y-2';
+
+      const topo = document.createElement('div');
+      topo.className = 'flex items-center gap-2';
+      const select = document.createElement('select');
+      select.className = 'seletor-insumo-ficha min-w-0 flex-1 bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg p-2';
+      select.setAttribute('aria-label', 'Insumo da receita');
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = listaInsumos.length
+        ? 'Selecione um insumo'
+        : 'Nenhum insumo cadastrado';
+      select.appendChild(placeholder);
+
+      const selecionado = componente?.insumo_id || '';
+      listaInsumos
+        .filter(insumo => insumo.ativo || insumo.id === selecionado)
+        .forEach(insumo => {
+          const option = document.createElement('option');
+          option.value = insumo.id;
+          option.textContent = `${insumo.nome} · ${insumo.unidade_base}${insumo.ativo ? '' : ' (inativo)'}`;
+          select.appendChild(option);
+        });
+      select.value = selecionado;
+      select.addEventListener('change', () => {
+        atualizarUnidadeComponenteFicha(linha);
+        atualizarResumoFicha();
+      });
+
+      const remover = document.createElement('button');
+      remover.type = 'button';
+      remover.className = 'text-rose-400 hover:text-rose-300 px-2 py-1 text-sm cursor-pointer';
+      remover.textContent = 'Remover';
+      remover.addEventListener('click', () => {
+        linha.remove();
+        atualizarResumoFicha();
+      });
+      topo.append(select, remover);
+
+      const campos = document.createElement('div');
+      campos.className = 'grid grid-cols-1 sm:grid-cols-2 gap-2';
+      const quantidade = document.createElement('input');
+      quantidade.type = 'number';
+      quantidade.min = '0.000001';
+      quantidade.step = 'any';
+      quantidade.required = true;
+      quantidade.value = componente?.quantidade_base ?? '';
+      quantidade.className = 'quantidade-insumo-ficha w-full bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg p-2';
+      quantidade.setAttribute('aria-label', 'Quantidade utilizada na unidade-base');
+      quantidade.addEventListener('input', atualizarResumoFicha);
+
+      const unidade = document.createElement('p');
+      unidade.className = 'unidade-componente-ficha text-xs text-slate-400 self-center';
+      const observacao = document.createElement('input');
+      observacao.type = 'text';
+      observacao.maxLength = 250;
+      observacao.value = componente?.observacao || '';
+      observacao.placeholder = 'Observação (opcional)';
+      observacao.className = 'observacao-insumo-ficha w-full sm:col-span-2 bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg p-2';
+      observacao.setAttribute('aria-label', 'Observação do insumo');
+      campos.append(quantidade, unidade, observacao);
+      linha.append(topo, campos);
+      container.appendChild(linha);
+      atualizarUnidadeComponenteFicha(linha);
+      atualizarResumoFicha();
+
+      if (!componente) {
+        linha.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        select.focus({ preventScroll: true });
+      }
+    }
+
+    function atualizarUnidadeComponenteFicha(linha) {
+      const id = linha.querySelector('.seletor-insumo-ficha').value;
+      const insumo = listaInsumos.find(item => item.id === id);
+      const unidade = linha.querySelector('.unidade-componente-ficha');
+      unidade.textContent = insumo
+        ? `Quantidade em ${insumo.unidade_base}; custo atual ${formatarCustoUnitario(Number(insumo.custo_por_unidade_base), insumo.unidade_base)} por ${insumo.unidade_base}.`
+        : 'Escolha o insumo para ver a unidade-base.';
+    }
+
+    function coletarComponentesFicha() {
+      return [...document.querySelectorAll('#componentes-ficha .componente-ficha')].map(linha => ({
+        insumo_id: linha.querySelector('.seletor-insumo-ficha').value,
+        quantidade_base: Number(linha.querySelector('.quantidade-insumo-ficha').value),
+        observacao: linha.querySelector('.observacao-insumo-ficha').value.trim() || null
+      }));
+    }
+
+    function atualizarResumoFicha() {
+      const componentes = coletarComponentesFicha();
+      const vistos = new Set();
+      let custo = 0;
+
+      componentes.forEach(componente => {
+        const insumo = listaInsumos.find(item => item.id === componente.insumo_id);
+        if (!insumo || !Number.isFinite(componente.quantidade_base) || componente.quantidade_base <= 0) return;
+        if (vistos.has(componente.insumo_id)) return;
+        vistos.add(componente.insumo_id);
+        custo += componente.quantidade_base * Number(insumo.custo_por_unidade_base);
+      });
+
+      const preco = Number(document.getElementById('ficha-preco-venda').value);
+      const lucro = Number.isFinite(preco) && preco >= 0 ? preco - custo : -custo;
+      document.getElementById('resumo-custo-ficha').textContent = formatarMoeda(custo);
+      document.getElementById('resumo-lucro-ficha').textContent = formatarMoeda(lucro);
+      document.getElementById('resumo-margem-ficha').textContent =
+        Number.isFinite(preco) && preco > 0
+          ? `${((lucro / preco) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
+          : '—';
+    }
+
+    function validarFormularioFicha() {
+      const nome = document.getElementById('ficha-nome').value.trim();
+      const categoria = document.getElementById('ficha-categoria').value.trim();
+      const preco = Number(document.getElementById('ficha-preco-venda').value);
+      const componentes = coletarComponentesFicha();
+      const ids = new Set();
+
+      if (!nome) return 'Informe o nome do produto.';
+      if (!categoria) return 'Informe a categoria do produto.';
+      if (!Number.isFinite(preco) || preco < 0) return 'O preço de venda deve ser zero ou maior.';
+      if (!componentes.length) return 'Adicione pelo menos um ingrediente, embalagem ou outro insumo.';
+
+      for (const componente of componentes) {
+        if (!componente.insumo_id) return 'Selecione um insumo em cada linha da composição.';
+        const insumo = listaInsumos.find(item => item.id === componente.insumo_id);
+        const jaComposto = fichaEmEdicao && composicaoFichas.some(item =>
+          item.ficha_tecnica_id === fichaEmEdicao && item.insumo_id === componente.insumo_id
+        );
+        if (!insumo || (!insumo.ativo && !jaComposto)) {
+          return 'Novos componentes devem usar insumos ativos. Componentes inativos já existentes podem ser mantidos ou removidos.';
+        }
+        if (!Number.isFinite(componente.quantidade_base) || componente.quantidade_base <= 0) {
+          return 'Informe uma quantidade maior que zero para cada componente.';
+        }
+        if (ids.has(componente.insumo_id)) return 'Cada insumo deve aparecer uma única vez. Ajuste a quantidade na linha existente.';
+        ids.add(componente.insumo_id);
+      }
+      return null;
+    }
+
+    async function salvarFichaTecnica(event) {
+      event.preventDefault();
+      const status = document.getElementById('status-form-ficha');
+      const erroValidacao = validarFormularioFicha();
+      if (erroValidacao) {
+        status.textContent = erroValidacao;
+        return;
+      }
+      if (!sessaoInsumos || !empresaInsumosAutorizada) {
+        status.textContent = 'Entre com uma conta autorizada na seção Insumos antes de salvar.';
+        return;
+      }
+
+      const editando = Boolean(fichaEmEdicao);
+      status.textContent = editando ? 'Salvando ficha...' : 'Cadastrando ficha...';
+      let resultado;
+      try {
+        resultado = await supabaseInsumosClient.rpc('salvar_ficha_tecnica', {
+          p_empresa_id: EMPRESA_ID,
+          p_ficha_id: fichaEmEdicao,
+          p_nome: document.getElementById('ficha-nome').value.trim(),
+          p_categoria: document.getElementById('ficha-categoria').value.trim(),
+          p_descricao: document.getElementById('ficha-descricao').value.trim() || null,
+          p_preco_venda: Number(document.getElementById('ficha-preco-venda').value),
+          p_insumos: coletarComponentesFicha()
+        });
+      } catch (error) {
+        status.textContent = 'Falha de comunicação ao salvar a ficha: ' + error.message;
+        return;
+      }
+
+      if (resultado.error) {
+        status.textContent = resultado.error.code === '23505'
+          ? 'Já existe um produto com esse nome nesta empresa.'
+          : 'Erro ao salvar a ficha: ' + resultado.error.message;
+        return;
+      }
+
+      limparFormularioFicha();
+      status.textContent = editando ? 'Ficha técnica atualizada.' : 'Ficha técnica cadastrada.';
+      await carregarFichasTecnicas();
+    }
+
+    function limparFormularioFicha() {
+      fichaEmEdicao = null;
+      const form = document.getElementById('form-ficha');
+      if (!form) return;
+      form.reset();
+      document.getElementById('ficha-categoria').value = 'hamburguer';
+      document.getElementById('ficha-preco-venda').value = '0';
+      document.getElementById('componentes-ficha').replaceChildren();
+      document.getElementById('titulo-form-ficha').textContent = 'Novo produto';
+      document.getElementById('botao-salvar-ficha').textContent = 'Cadastrar ficha técnica';
+      document.getElementById('botao-cancelar-ficha').hidden = true;
+      document.getElementById('status-form-ficha').textContent = '';
+      atualizarResumoFicha();
+    }
+
+    async function carregarFichasTecnicas() {
+      if (!supabaseInsumosClient || !sessaoInsumos || !empresaInsumosAutorizada) return;
+      const tbody = document.getElementById('tabela-fichas');
+      const status = document.getElementById('status-lista-fichas');
+      tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">Carregando fichas técnicas...</td></tr>';
+      status.textContent = '';
+
+      let fichas, erroFichas, composicao, erroComposicao;
+      try {
+        [ { data: fichas, error: erroFichas }, { data: composicao, error: erroComposicao } ] = await Promise.all([
+          supabaseInsumosClient
+            .from('vw_fichas_tecnicas_custos')
+            .select('id, empresa_id, nome, categoria, descricao, preco_venda, ativo, quantidade_insumos, custo_total_producao, lucro_estimado, margem_lucro_pct, criado_em, atualizado_em')
+            .eq('empresa_id', EMPRESA_ID)
+            .order('nome', { ascending: true }),
+          supabaseInsumosClient
+            .from('ficha_tecnica_insumos')
+            .select('id, empresa_id, ficha_tecnica_id, insumo_id, quantidade_base, observacao')
+            .eq('empresa_id', EMPRESA_ID)
+        ]);
+      } catch (error) {
+        listaFichas = [];
+        composicaoFichas = [];
+        renderizarFichasTecnicas();
+        status.textContent = 'Falha de comunicação ao carregar fichas: ' + error.message;
+        return;
+      }
+
+      if (erroFichas || erroComposicao) {
+        listaFichas = [];
+        composicaoFichas = [];
+        renderizarFichasTecnicas();
+        const erro = erroFichas || erroComposicao;
+        status.textContent = 'Erro ao carregar fichas técnicas: ' + erro.message +
+          '. Confirme que o SQL de fichas_tecnicas.sql foi executado.';
+        return;
+      }
+
+      listaFichas = fichas || [];
+      composicaoFichas = composicao || [];
+      renderizarFichasTecnicas();
+    }
+
+    function renderizarFichasTecnicas() {
+      const tbody = document.getElementById('tabela-fichas');
+      if (!tbody) return;
+      tbody.replaceChildren();
+
+      const filtro = document.getElementById('filtro-status-fichas').value;
+      const busca = document.getElementById('pesquisa-fichas').value.trim().toLocaleLowerCase('pt-BR');
+      const fichas = listaFichas.filter(ficha => {
+        const statusOk = filtro === 'todos' ||
+          (filtro === 'ativos' && ficha.ativo) ||
+          (filtro === 'inativos' && !ficha.ativo);
+        return statusOk && `${ficha.nome} ${ficha.categoria}`.toLocaleLowerCase('pt-BR').includes(busca);
+      });
+
+      document.getElementById('total-fichas').textContent =
+        `${fichas.length} produto(s) exibido(s) de ${listaFichas.length}.`;
+
+      if (!fichas.length) {
+        const linha = document.createElement('tr');
+        const celula = criarCelula('Nenhum produto encontrado para este filtro.', 'p-4 text-center text-slate-500');
+        celula.colSpan = 5;
+        linha.appendChild(celula);
+        tbody.appendChild(linha);
+        return;
+      }
+
+      fichas.forEach(ficha => {
+        const linha = document.createElement('tr');
+        linha.className = 'hover:bg-slate-700/40';
+        const produto = document.createElement('td');
+        produto.className = 'p-3';
+        const nome = document.createElement('div');
+        nome.className = 'font-medium text-slate-200';
+        nome.textContent = ficha.nome;
+        const categoria = document.createElement('div');
+        categoria.className = 'text-xs text-slate-400 mt-1';
+        categoria.textContent = `${ficha.categoria} · ${ficha.ativo ? 'Ativo' : 'Inativo'} · ${ficha.quantidade_insumos} componente(s)`;
+        produto.append(nome, categoria);
+        const custo = Number(ficha.custo_total_producao);
+        const preco = Number(ficha.preco_venda);
+        const lucro = Number(ficha.lucro_estimado);
+        const lucroCelula = document.createElement('td');
+        lucroCelula.className = `p-3 text-right whitespace-nowrap ${lucro < 0 ? 'text-rose-400' : 'text-emerald-400'}`;
+        const lucroValor = document.createElement('div');
+        lucroValor.textContent = formatarMoeda(lucro);
+        const margem = document.createElement('div');
+        margem.className = 'text-xs text-slate-400 mt-1';
+        margem.textContent = ficha.margem_lucro_pct === null
+          ? 'Margem indisponível'
+          : `${Number(ficha.margem_lucro_pct).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+        lucroCelula.append(lucroValor, margem);
+        linha.append(
+          produto,
+          criarCelula(formatarMoeda(custo), 'p-3 text-right text-amber-400 whitespace-nowrap'),
+          criarCelula(formatarMoeda(preco), 'p-3 text-right text-slate-200 whitespace-nowrap'),
+          lucroCelula
+        );
+
+        const acoes = document.createElement('td');
+        acoes.className = 'p-3';
+        const grupo = document.createElement('div');
+        grupo.className = 'flex flex-wrap justify-center gap-2';
+        const botoes = [
+          ['Ver', 'text-cyan-400 hover:text-cyan-300', () => mostrarDetalheFicha(ficha)],
+          ['Editar', 'text-amber-400 hover:text-amber-300', () => editarFichaTecnica(ficha.id)],
+          [ficha.ativo ? 'Desativar' : 'Reativar', ficha.ativo ? 'text-rose-400 hover:text-rose-300' : 'text-emerald-400 hover:text-emerald-300', () => alternarStatusFicha(ficha.id)]
+        ];
+        botoes.forEach(([texto, classe, acao]) => {
+          const botao = document.createElement('button');
+          botao.type = 'button';
+          botao.className = `${classe} underline underline-offset-2`;
+          botao.textContent = texto;
+          botao.addEventListener('click', acao);
+          grupo.appendChild(botao);
+        });
+        acoes.appendChild(grupo);
+        linha.appendChild(acoes);
+        tbody.appendChild(linha);
+      });
+    }
+
+    function editarFichaTecnica(id) {
+      const ficha = listaFichas.find(item => item.id === id);
+      if (!ficha) {
+        document.getElementById('status-lista-fichas').textContent = 'A ficha não está mais na lista. Atualize os dados.';
+        return;
+      }
+
+      fichaEmEdicao = ficha.id;
+      document.getElementById('ficha-nome').value = ficha.nome;
+      document.getElementById('ficha-categoria').value = ficha.categoria;
+      document.getElementById('ficha-descricao').value = ficha.descricao || '';
+      document.getElementById('ficha-preco-venda').value = ficha.preco_venda;
+      document.getElementById('titulo-form-ficha').textContent = 'Editar produto';
+      document.getElementById('botao-salvar-ficha').textContent = 'Salvar alterações';
+      document.getElementById('botao-cancelar-ficha').hidden = false;
+      document.getElementById('status-form-ficha').textContent = '';
+      document.getElementById('componentes-ficha').replaceChildren();
+      composicaoFichas
+        .filter(item => item.ficha_tecnica_id === ficha.id)
+        .forEach(item => adicionarComponenteFicha(item));
+      atualizarResumoFicha();
+      document.getElementById('form-ficha').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function alternarStatusFicha(id) {
+      if (!sessaoInsumos || !empresaInsumosAutorizada) {
+        document.getElementById('status-lista-fichas').textContent = 'Entre novamente para alterar esta ficha.';
+        return;
+      }
+      const ficha = listaFichas.find(item => item.id === id);
+      if (!ficha) return;
+      const novoStatus = !ficha.ativo;
+      const verbo = novoStatus ? 'reativar' : 'desativar';
+      if (!window.confirm(`Deseja ${verbo} a ficha "${ficha.nome}"?`)) return;
+
+      let error;
+      try {
+        ({ error } = await supabaseInsumosClient
+          .from('fichas_tecnicas')
+          .update({ ativo: novoStatus })
+          .eq('id', ficha.id)
+          .eq('empresa_id', EMPRESA_ID));
+      } catch (requestError) {
+        document.getElementById('status-lista-fichas').textContent =
+          `Falha de comunicação ao ${verbo} ficha: ${requestError.message}`;
+        return;
+      }
+      if (error) {
+        document.getElementById('status-lista-fichas').textContent =
+          `Erro ao ${verbo} ficha: ${error.message}`;
+        return;
+      }
+      await carregarFichasTecnicas();
+      document.getElementById('status-lista-fichas').textContent =
+        novoStatus ? 'Ficha reativada.' : 'Ficha desativada sem apagar sua composição.';
+    }
+
+    function mostrarDetalheFicha(ficha) {
+      const painel = document.getElementById('detalhe-ficha');
+      const tbody = document.getElementById('tabela-detalhe-ficha');
+      document.getElementById('titulo-detalhe-ficha').textContent =
+        `${ficha.nome} · custo atual ${formatarMoeda(ficha.custo_total_producao)} · lucro ${formatarMoeda(ficha.lucro_estimado)}`;
+      tbody.replaceChildren();
+
+      const componentes = composicaoFichas.filter(item => item.ficha_tecnica_id === ficha.id);
+      if (!componentes.length) {
+        const linha = document.createElement('tr');
+        const celula = criarCelula('Esta ficha ainda não possui composição.', 'p-4 text-center text-slate-500');
+        celula.colSpan = 3;
+        linha.appendChild(celula);
+        tbody.appendChild(linha);
+      }
+      componentes.forEach(componente => {
+        const insumo = listaInsumos.find(item => item.id === componente.insumo_id);
+        const linha = document.createElement('tr');
+        const nome = insumo ? insumo.nome : 'Insumo indisponível';
+        const unidade = insumo?.unidade_base || 'base desconhecida';
+        const custo = insumo
+          ? Number(componente.quantidade_base) * Number(insumo.custo_por_unidade_base)
+          : null;
+        linha.append(
+          criarCelula(`${nome}${insumo && !insumo.ativo ? ' (inativo)' : ''}`, 'p-3 text-slate-200'),
+          criarCelula(`${componente.quantidade_base} ${unidade}`, 'p-3 text-right text-slate-300'),
+          criarCelula(custo === null ? 'Indisponível' : formatarMoeda(custo), 'p-3 text-right text-amber-400')
+        );
+        tbody.appendChild(linha);
+      });
+
+      painel.hidden = false;
+      painel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function fecharDetalheFicha() {
+      document.getElementById('detalhe-ficha').hidden = true;
     }
 
     function converterValorPlanilha(valor) {
@@ -544,7 +1851,74 @@
       return parseFloat(normalizado) || 0;
     }
 
-    // Processar e importar Relatório do PedeApp (CSV com separador ;)
+    function extrairDadosPedidosCSV(linhas) {
+      const dadosParaInserir = [];
+      let secaoPedidos = false;
+
+      for (let linha of linhas) {
+        linha = linha.trim();
+        if (!linha || linha.startsWith('---')) continue;
+
+        if (linha.includes('PEDIDOS DO PERÍODO COM DETALHAMENTO DE FRETE')) {
+          secaoPedidos = true;
+          continue;
+        }
+
+        if (secaoPedidos) {
+          if (linha.startsWith('Pedido #')) {
+            continue;
+          }
+
+          const colunas = linha.split(';').map(c => c.replace(/^"|"$/g, '').trim());
+          if (colunas.length >= 8 && colunas[0] && colunas[0].match(/^\d+$/)) {
+            dadosParaInserir.push({
+              empresa_id: EMPRESA_ID,
+              numero_pedido: '#' + colunas[0],
+              data_hora: colunas[1] || '-',
+              cliente: colunas[2] || '-',
+              pagamento: colunas[5] || 'Outros',
+              total: converterValorPlanilha(colunas[6]),
+              taxa: converterValorPlanilha(colunas[7]),
+              itens: [colunas[3] || '', colunas[4] || ''].filter(Boolean).join(' ')
+            });
+          }
+        }
+      }
+
+      return dadosParaInserir;
+    }
+
+    function extrairDadosPedidosExcel(workbook) {
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const linhas = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: '' });
+      const dadosParaInserir = [];
+
+      for (const linha of linhas) {
+        if (!Array.isArray(linha) || linha.length < 8) continue;
+
+        const colunas = linha.map(c => String(c ?? '').trim().replace(/^"|"$/g, ''));
+        const pedido = String(colunas[0] || '').replace(/^#/, '').trim();
+
+        if (!pedido || !pedido.match(/^\d+$/)) continue;
+        if (String(colunas[0] || '').toLowerCase().includes('pedido')) continue;
+
+        dadosParaInserir.push({
+          empresa_id: EMPRESA_ID,
+          numero_pedido: '#' + pedido,
+          data_hora: colunas[1] || '-',
+          cliente: colunas[2] || '-',
+          pagamento: colunas[5] || 'Outros',
+          total: converterValorPlanilha(colunas[6]),
+          taxa: converterValorPlanilha(colunas[7]),
+          itens: [colunas[3] || '', colunas[4] || ''].filter(Boolean).join(' ')
+        });
+      }
+
+      return dadosParaInserir;
+    }
+
+    // Processar e importar Relatório do PedeApp (CSV ou Excel)
     async function processarPlanilha() {
       const fileInput = document.getElementById('input-excel');
       const statusDiv = document.getElementById('status-importacao');
@@ -557,75 +1931,42 @@
       const file = fileInput.files[0];
       statusDiv.textContent = 'A ler o arquivo...';
 
-      const reader = new FileReader();
-      reader.onload = async function(e) {
-        try {
-          const text = e.target.result;
+      try {
+        const extensao = file.name.split('.').pop()?.toLowerCase();
+        let dadosParaInserir = [];
+
+        if (extensao === 'csv' || extensao === 'txt') {
+          const text = await file.text();
           const linhas = text.split(/\r?\n/);
-          const dadosParaInserir = [];
-          
-          let secaoPedidos = false;
-
-          for (let linha of linhas) {
-            linha = linha.trim();
-            if (!linha || linha.startsWith('---')) continue;
-
-            if (linha.includes('PEDIDOS DO PERÍODO COM DETALHAMENTO DE FRETE')) {
-              secaoPedidos = true;
-              continue;
-            }
-
-            if (secaoPedidos) {
-              if (linha.startsWith('Pedido #')) {
-                continue; // Pula o cabeçalho
-              }
-
-              const colunas = linha.split(';').map(c => c.replace(/^"|"$/g, '').trim());
-              
-              if (colunas.length >= 8 && colunas[0] && colunas[0].match(/^\d+$/)) {
-                dadosParaInserir.push({
-                  empresa_id: EMPRESA_ID,
-                  numero_pedido: '#' + colunas[0],
-                  data_hora: colunas[1] || '-',
-                  cliente: colunas[2] || '-',
-                  pagamento: colunas[5] || 'Outros',
-                  total: converterValorPlanilha(colunas[6]),
-                  taxa: converterValorPlanilha(colunas[7]),
-                  itens: colunas[3] + ' (' + colunas[4] + ')'
-                });
-              }
-            }
-          }
-
-          if (dadosParaInserir.length === 0) {
-            // Tenta fallback com SheetJS caso seja formato XLSX puro
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            const rows = XLSX.utils.sheet_to_json(worksheet);
-            
-            statusDiv.textContent = 'O arquivo CSV precisa estar no formato padrão PedeApp.';
-            return;
-          }
-
-          statusDiv.textContent = `A enviar ${dadosParaInserir.length} pedidos...`;
-          const { error } = await supabaseClient.from('vendas').insert(dadosParaInserir);
-
-          if (error) {
-            statusDiv.textContent = 'Erro: ' + error.message;
-          } else {
-            statusDiv.textContent = 'Sucesso! Pedidos importados!';
-            fileInput.value = ''; 
-            carregarDados(); 
-          }
-        } catch (err) {
-          statusDiv.textContent = 'Erro ao processar arquivo: ' + err.message;
+          dadosParaInserir = extrairDadosPedidosCSV(linhas);
+        } else if (extensao === 'xlsx' || extensao === 'xls') {
+          const buffer = await file.arrayBuffer();
+          const workbook = XLSX.read(buffer, { type: 'array' });
+          dadosParaInserir = extrairDadosPedidosExcel(workbook);
+        } else {
+          const text = await file.text();
+          const linhas = text.split(/\r?\n/);
+          dadosParaInserir = extrairDadosPedidosCSV(linhas);
         }
-      };
-      
-      // Lê como texto para processar o CSV estruturado do PedeApp com precisão
-      reader.readAsText(file, 'UTF-8');
+
+        if (dadosParaInserir.length === 0) {
+          statusDiv.textContent = 'O arquivo não está no formato padrão do PedeApp. Verifica se ele é um CSV ou Excel exportado corretamente.';
+          return;
+        }
+
+        statusDiv.textContent = `A enviar ${dadosParaInserir.length} pedidos...`;
+        const { error } = await supabaseClient.from('vendas').insert(dadosParaInserir);
+
+        if (error) {
+          statusDiv.textContent = 'Erro: ' + error.message;
+        } else {
+          statusDiv.textContent = 'Sucesso! Pedidos importados!';
+          fileInput.value = '';
+          carregarDados();
+        }
+      } catch (err) {
+        statusDiv.textContent = 'Erro ao processar arquivo: ' + err.message;
+      }
     }
 
     // Adicionar Custo Manual
