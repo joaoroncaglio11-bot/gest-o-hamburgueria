@@ -208,22 +208,30 @@
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
 
   <section id="painel-senha" class="min-h-screen flex items-center justify-center p-4">
-    <form class="w-full max-w-md bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-5" onsubmit="desbloquearPainel(event)">
+    <form class="w-full max-w-md bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-5" onsubmit="entrarPainel(event)">
       <div class="text-center">
         <img src="assets/nobre-burger-logo.png" alt="Logo Nobre Burger - Hamburgueria Artesanal" class="mx-auto h-40 w-40 rounded-xl object-contain">
         <h1 class="mt-3 text-2xl font-bold tracking-wide text-amber-400">Nobre Burger</h1>
         <p class="mt-1 text-sm text-slate-400">Hamburgueria Artesanal</p>
-        <p class="mt-3 text-sm text-slate-400">Digite a senha para abrir o painel.</p>
+        <p class="mt-3 text-sm text-slate-400">Entre com sua conta para acessar o painel.</p>
       </div>
       <div>
-        <label for="senha-painel" class="block text-sm text-slate-300 mb-1">Senha</label>
-        <input id="senha-painel" type="password" inputmode="numeric" autocomplete="current-password" required
+        <label for="login-email" class="block text-sm text-slate-300 mb-1">E-mail</label>
+        <input id="login-email" type="email" autocomplete="username" required
           class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-3 focus:outline-none focus:border-amber-500">
       </div>
-      <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 rounded-lg text-sm transition-colors cursor-pointer">
+      <div>
+        <label for="login-senha" class="block text-sm text-slate-300 mb-1">Senha</label>
+        <input id="login-senha" type="password" autocomplete="current-password" required
+          class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-3 focus:outline-none focus:border-amber-500">
+      </div>
+      <button id="botao-entrar-painel" type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3 rounded-lg text-sm transition-colors cursor-pointer">
         Entrar
       </button>
-      <p id="mensagem-senha" class="text-sm text-rose-400" role="alert" aria-live="polite"></p>
+      <p id="mensagem-senha" class="text-sm text-rose-400" role="status" aria-live="polite"></p>
+      <button id="botao-sair-login" type="button" onclick="sairInsumos()" hidden class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium py-2 rounded-lg text-sm cursor-pointer">
+        Sair desta conta
+      </button>
     </form>
   </section>
 
@@ -237,6 +245,9 @@
       <div class="flex items-center gap-3">
         <button id="botao-tema" type="button" onclick="alternarTema()" class="bg-amber-600 hover:bg-amber-700 text-white font-medium px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer" aria-label="Ativar modo claro">
           Modo claro
+        </button>
+        <button id="botao-sair-painel" type="button" onclick="sairInsumos()" hidden class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium px-3 py-2 rounded-lg text-sm cursor-pointer">
+          Sair
         </button>
         <div id="status-conexao" class="text-xs px-3 py-1 rounded-full bg-red-950 text-red-400 border border-red-800 font-medium">
           A conectar...
@@ -256,6 +267,12 @@
       </button>
       <button id="aba-fichas" type="button" aria-selected="false" onclick="mostrarSecaoPainel('fichas')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium px-4 py-2 rounded-lg text-sm cursor-pointer">
         Fichas Técnicas
+      </button>
+      <button id="aba-precificacao" type="button" aria-selected="false" onclick="mostrarSecaoPainel('precificacao')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium px-4 py-2 rounded-lg text-sm cursor-pointer">
+        Precificação Inteligente
+      </button>
+      <button id="aba-administracao" type="button" aria-selected="false" hidden onclick="mostrarSecaoPainel('administracao')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium px-4 py-2 rounded-lg text-sm cursor-pointer">
+        Administração
       </button>
     </nav>
 
@@ -772,6 +789,114 @@
       </section>
     </section>
 
+    <section id="painel-precificacao" hidden class="space-y-6">
+      <div>
+        <h2 class="text-xl font-semibold text-slate-100">Precificação Inteligente</h2>
+        <p class="text-sm text-slate-400 mt-1">Configure custos e taxas da empresa. Estes dados ainda não alteram os custos ou cálculos das fichas técnicas.</p>
+      </div>
+
+      <div id="precificacao-login" class="max-w-lg bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-3">
+        <p class="text-sm text-slate-300">O acesso às configurações exige uma sessão Supabase Auth vinculada à empresa. Entre primeiro pela seção Insumos.</p>
+        <button type="button" onclick="mostrarSecaoPainel('insumos')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg text-sm cursor-pointer">
+          Ir para Insumos
+        </button>
+      </div>
+
+      <div id="precificacao-conteudo" hidden class="max-w-3xl bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm">
+        <form id="form-configuracoes-precificacao" onsubmit="salvarConfiguracoesPrecificacao(event)" class="space-y-5">
+          <div>
+            <h3 class="text-lg font-semibold text-slate-200">Configurações da empresa</h3>
+            <p class="text-sm text-slate-400 mt-1">Os valores são salvos para a empresa vinculada à sua conta.</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="precificacao-gas" class="block text-sm text-slate-300 mb-1">Gás mensal (R$)</label>
+              <input id="precificacao-gas" type="number" min="0" step="0.01" value="130.00" required class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+              <label for="precificacao-oleo" class="block text-sm text-slate-300 mb-1">Óleo da fritadeira mensal (R$)</label>
+              <input id="precificacao-oleo" type="number" min="0" step="0.01" value="42.00" required class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+              <label for="precificacao-taxa-cartao" class="block text-sm text-slate-300 mb-1">Taxa de cartão (%)</label>
+              <input id="precificacao-taxa-cartao" type="number" min="0" max="100" step="0.0001" value="0" required class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+              <label for="precificacao-producao-mensal" class="block text-sm text-slate-300 mb-1">Produção mensal estimada (unidades)</label>
+              <input id="precificacao-producao-mensal" type="number" min="0" max="2147483647" step="1" value="0" required class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+            </div>
+          </div>
+
+          <section class="space-y-3" aria-labelledby="titulo-outras-taxas">
+            <div>
+              <h4 id="titulo-outras-taxas" class="font-medium text-slate-200">Outras taxas percentuais</h4>
+              <p class="text-xs text-slate-400 mt-1">Adicione cada taxa com um nome e percentual. Nenhuma taxa é aplicada aos cálculos nesta etapa.</p>
+            </div>
+            <div id="lista-outras-taxas-precificacao" class="space-y-3"></div>
+            <button type="button" onclick="adicionarTaxaPrecificacao()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg text-sm cursor-pointer">
+              + Adicionar taxa
+            </button>
+          </section>
+
+          <div class="border-t border-slate-700 pt-4 space-y-3">
+            <button id="botao-salvar-configuracoes-precificacao" type="submit" disabled class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-5 py-2 rounded-lg text-sm cursor-pointer">
+              Salvar configurações
+            </button>
+            <p id="status-configuracoes-precificacao" class="text-sm text-slate-300" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="painel-administracao" hidden class="space-y-6">
+      <div>
+        <h2 class="text-xl font-semibold text-slate-100">Administração da plataforma</h2>
+        <p class="text-sm text-slate-400 mt-1">Visão geral das empresas e situação atual das licenças. Esta tela é somente para consulta.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+          <p class="text-sm text-slate-400 font-medium">Empresas cadastradas</p>
+          <p id="admin-total-empresas" class="text-2xl font-bold text-amber-400 mt-1">—</p>
+        </div>
+        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+          <p class="text-sm text-slate-400 font-medium">Licenças vigentes</p>
+          <p id="admin-total-licencas-vigentes" class="text-2xl font-bold text-emerald-400 mt-1">—</p>
+        </div>
+        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-sm">
+          <p class="text-sm text-slate-400 font-medium">Licenças vencidas</p>
+          <p id="admin-total-licencas-vencidas" class="text-2xl font-bold text-rose-400 mt-1">—</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h3 class="text-lg font-semibold text-slate-200">Empresas e licenças</h3>
+          <button type="button" onclick="carregarPainelAdministrativo()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm cursor-pointer">
+            Atualizar painel
+          </button>
+        </div>
+        <div class="overflow-x-auto rounded-lg border border-slate-700">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+              <tr>
+                <th class="p-3">Hamburgueria</th>
+                <th class="p-3">Situação cadastral</th>
+                <th class="p-3">Início da licença</th>
+                <th class="p-3">Vencimento</th>
+                <th class="p-3">Situação do acesso</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-administracao-empresas" class="divide-y divide-slate-700">
+              <tr><td colspan="5" class="p-4 text-center text-slate-500">Carregando empresas...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p id="status-administracao" class="text-sm text-slate-300" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
   </main>
 
   <!-- LÓGICA DO SUPABASE -->
@@ -780,19 +905,25 @@
     const SUPABASE_KEY = 'sb_publishable_TU6HaVhbZwu7iFY7O3Io9w_wGeQ4aBI'; 
     const EMPRESA_ID = '9299d1fd-f54d-4f2b-bdd8-5161e795bebc';
     const TAXA_MAQUINA_CARTAO = 0.0489;
-    const SENHA_PAINEL = '2134';
 
     let supabaseClient = null;
     let supabaseInsumosClient = null;
     let sessaoInsumos = null;
     let empresaInsumosAutorizada = false;
+    let empresaAutorizadaId = null;
+    let administradorPlataforma = false;
+    let usuarioAdminPainelCarregadoId = null;
     let versaoSessaoInsumos = 0;
+    let versaoCargaAdmin = 0;
     let listaInsumos = [];
     let insumoEmEdicao = null;
     let listaFichas = [];
     let composicaoFichas = [];
     let fichaEmEdicao = null;
     let painelDesbloqueado = false;
+    let usuarioPainelCarregadoId = null;
+    let configuracaoPrecificacaoCarregada = false;
+    let versaoCargaConfiguracaoPrecificacao = 0;
 
     function definirTema(tema) {
       const temaClaro = tema === 'light';
@@ -819,46 +950,76 @@
       definirTema('dark');
     }
 
-    function desbloquearPainel(event) {
+    async function entrarPainel(event) {
       event.preventDefault();
-      const campoSenha = document.getElementById('senha-painel');
-      if (campoSenha.value !== SENHA_PAINEL) {
-        document.getElementById('mensagem-senha').textContent = 'Senha incorreta.';
-        campoSenha.value = '';
-        campoSenha.focus();
+      const status = document.getElementById('mensagem-senha');
+      const botao = document.getElementById('botao-entrar-painel');
+      if (!supabaseInsumosClient) {
+        status.textContent = 'A autenticação ainda não está disponível. Atualize a página e tente novamente.';
         return;
       }
 
-      painelDesbloqueado = true;
-      document.getElementById('painel-senha').hidden = true;
-      document.getElementById('app-cabecalho').hidden = false;
-      document.getElementById('app-conteudo').hidden = false;
-      inicializarPainel();
+      status.textContent = 'Autenticando e verificando o vínculo com a empresa...';
+      botao.disabled = true;
+      try {
+        const { error } = await supabaseInsumosClient.auth.signInWithPassword({
+          email: document.getElementById('login-email').value.trim(),
+          password: document.getElementById('login-senha').value
+        });
+        if (error) {
+          status.textContent = 'Não foi possível entrar: ' + error.message;
+          return;
+        }
+        document.getElementById('login-senha').value = '';
+      } catch (error) {
+        status.textContent = 'Falha de comunicação durante o login: ' + error.message;
+      } finally {
+        botao.disabled = false;
+      }
     }
 
     function inicializarPainel() {
-      if (!painelDesbloqueado) return;
+      if (!sessaoInsumos || !empresaInsumosAutorizada || !empresaAutorizadaId) return;
       try {
-        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        supabaseClient = supabaseInsumosClient;
         const badge = document.getElementById('status-conexao');
         badge.textContent = 'Conectado';
         badge.className = 'text-xs px-3 py-1 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-medium';
 
+        document.getElementById('painel-senha').hidden = true;
+        document.getElementById('app-cabecalho').hidden = false;
+        document.getElementById('app-conteudo').hidden = false;
+        document.getElementById('botao-sair-painel').hidden = false;
         document.getElementById('custo-data').valueAsDate = new Date();
-        carregarDados();
-        inicializarClienteInsumos();
+        ['financeiro', 'insumos', 'fichas', 'precificacao'].forEach(secao => {
+          document.getElementById(`aba-${secao}`).hidden = false;
+        });
+        document.getElementById('aba-administracao').hidden = !administradorPlataforma;
+        mostrarSecaoPainel('financeiro');
+        if (usuarioPainelCarregadoId !== sessaoInsumos.user.id) {
+          usuarioPainelCarregadoId = sessaoInsumos.user.id;
+          painelDesbloqueado = true;
+          void carregarDados();
+        }
       } catch (error) {
         console.error('Erro ao conectar ao Supabase:', error);
+        document.getElementById('mensagem-senha').textContent =
+          'Não foi possível abrir o painel. Atualize a página e tente novamente.';
       }
     }
 
     function mostrarSecaoPainel(secao) {
+      if (secao === 'administracao' && !administradorPlataforma) return;
+      if (secao !== 'administracao' && !empresaInsumosAutorizada) return;
+
       const financeiro = secao !== 'insumos';
       const insumos = secao === 'insumos';
       const secoes = [
         ['financeiro', 'painel-financeiro', 'aba-financeiro'],
         ['insumos', 'painel-insumos', 'aba-insumos'],
-        ['fichas', 'painel-fichas', 'aba-fichas']
+        ['fichas', 'painel-fichas', 'aba-fichas'],
+        ['precificacao', 'painel-precificacao', 'aba-precificacao'],
+        ['administracao', 'painel-administracao', 'aba-administracao']
       ];
 
       secoes.forEach(([nome, painelId, abaId]) => {
@@ -875,10 +1036,205 @@
         if (insumos && !listaInsumos.length) void carregarInsumos();
         if (!insumos && !listaFichas.length) void carregarFichasTecnicas();
       }
+      if (secao === 'precificacao' && sessaoInsumos && empresaInsumosAutorizada) {
+        void carregarConfiguracoesPrecificacao();
+      }
+      if (secao === 'administracao') void carregarPainelAdministrativo();
+    }
+
+    async function verificarAdministradorPlataforma() {
+      const { data, error } = await supabaseInsumosClient.rpc('usuario_e_admin_plataforma');
+      if (error) throw error;
+      if (typeof data !== 'boolean') {
+        throw new Error('A função de autorização administrativa retornou uma resposta inválida.');
+      }
+      administradorPlataforma = data;
+      document.getElementById('aba-administracao').hidden = !data;
+      if (!data) {
+        document.getElementById('painel-administracao').hidden = true;
+        usuarioAdminPainelCarregadoId = null;
+        limparPainelAdministrativo();
+      }
+      return data;
+    }
+
+    function limparPainelAdministrativo() {
+      versaoCargaAdmin += 1;
+      document.getElementById('admin-total-empresas').textContent = '—';
+      document.getElementById('admin-total-licencas-vigentes').textContent = '—';
+      document.getElementById('admin-total-licencas-vencidas').textContent = '—';
+      document.getElementById('tabela-administracao-empresas').replaceChildren();
+      document.getElementById('status-administracao').textContent = '';
+    }
+
+    function abrirPainelAdministrativoSemVinculo() {
+      empresaInsumosAutorizada = false;
+      empresaAutorizadaId = null;
+      supabaseClient = supabaseInsumosClient;
+      usuarioPainelCarregadoId = null;
+      usuarioAdminPainelCarregadoId = sessaoInsumos?.user.id || null;
+      painelDesbloqueado = true;
+      atualizarVisibilidadePrecificacao(false);
+      document.getElementById('painel-senha').hidden = true;
+      document.getElementById('app-cabecalho').hidden = false;
+      document.getElementById('app-conteudo').hidden = false;
+      document.getElementById('botao-sair-painel').hidden = false;
+      document.getElementById('botao-sair-login').hidden = true;
+      document.getElementById('aba-financeiro').setAttribute('aria-selected', 'false');
+      document.getElementById('aba-insumos').setAttribute('aria-selected', 'false');
+      document.getElementById('aba-fichas').setAttribute('aria-selected', 'false');
+      document.getElementById('aba-precificacao').setAttribute('aria-selected', 'false');
+      document.getElementById('insumos-login').hidden = false;
+      document.getElementById('insumos-conteudo').hidden = true;
+      document.getElementById('fichas-login').hidden = false;
+      document.getElementById('fichas-conteudo').hidden = true;
+
+      ['financeiro', 'insumos', 'fichas', 'precificacao'].forEach(secao => {
+        document.getElementById(`aba-${secao}`).hidden = true;
+        document.getElementById(`painel-${secao}`).hidden = true;
+      });
+      document.getElementById('aba-administracao').hidden = false;
+      document.getElementById('status-conexao').textContent = 'Administrador da plataforma';
+      mostrarSecaoPainel('administracao');
+    }
+
+    function formatarDataAdministrativa(data) {
+      if (!data) return '—';
+      const [ano, mes, dia] = data.slice(0, 10).split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function obterDataAtualISO() {
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+      const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+      const dia = String(hoje.getDate()).padStart(2, '0');
+      return `${ano}-${mes}-${dia}`;
+    }
+
+    function obterSituacaoAcessoAdministrativo(empresa, licencas, hoje) {
+      if (empresa.situacao === 'suspensa') return 'Suspensa';
+      if (empresa.situacao === 'encerrada') return 'Encerrada';
+      if (!licencas.length) return 'Sem licença';
+
+      const iniciadas = licencas
+        .filter(licenca => licenca.data_inicio <= hoje)
+        .sort((a, b) => b.data_inicio.localeCompare(a.data_inicio) ||
+        b.criada_em.localeCompare(a.criada_em) || b.id.localeCompare(a.id));
+      const licencaAtual = iniciadas[0];
+      if (!licencaAtual) {
+        return licencas.some(licenca => licenca.data_inicio > hoje)
+          ? 'Futura'
+          : 'Sem licença';
+      }
+      if (licencaAtual.situacao === 'suspensa') return 'Suspensa';
+      if (licencaAtual.situacao === 'cancelada') return 'Cancelada';
+      if (licencaAtual.data_vencimento < hoje) return 'Vencida';
+      return 'Vigente';
+    }
+
+    async function carregarPainelAdministrativo() {
+      const versaoCarga = ++versaoCargaAdmin;
+      const corpo = document.getElementById('tabela-administracao-empresas');
+      const status = document.getElementById('status-administracao');
+      if (!administradorPlataforma || !sessaoInsumos || !supabaseInsumosClient) {
+        corpo.replaceChildren();
+        status.textContent = 'Acesso administrativo não autorizado.';
+        return;
+      }
+
+      status.textContent = 'Carregando empresas e licenças...';
+      document.getElementById('admin-total-empresas').textContent = '—';
+      document.getElementById('admin-total-licencas-vigentes').textContent = '—';
+      document.getElementById('admin-total-licencas-vencidas').textContent = '—';
+      corpo.replaceChildren();
+      const carregando = document.createElement('tr');
+      const celulaCarregando = document.createElement('td');
+      celulaCarregando.colSpan = 5;
+      celulaCarregando.className = 'p-4 text-center text-slate-500';
+      celulaCarregando.textContent = 'Carregando empresas...';
+      carregando.append(celulaCarregando);
+      corpo.append(carregando);
+
+      try {
+        const [respostaEmpresas, respostaLicencas] = await Promise.all([
+          supabaseInsumosClient
+            .from('empresas')
+            .select('id,nome,situacao'),
+          supabaseInsumosClient
+            .from('licencas')
+            .select('id,empresa_id,data_inicio,data_vencimento,situacao,criada_em')
+        ]);
+        if (respostaEmpresas.error) throw respostaEmpresas.error;
+        if (respostaLicencas.error) throw respostaLicencas.error;
+        if (versaoCarga !== versaoCargaAdmin ||
+            !administradorPlataforma ||
+            sessaoInsumos?.user.id !== usuarioAdminPainelCarregadoId) return;
+
+        const empresas = respostaEmpresas.data || [];
+        const licencas = respostaLicencas.data || [];
+        const hoje = obterDataAtualISO();
+        let vigentes = 0;
+        let vencidas = 0;
+        corpo.replaceChildren();
+
+        empresas.forEach(empresa => {
+          const licencasDaEmpresa = licencas.filter(licenca => licenca.empresa_id === empresa.id);
+          const situacaoAcesso = obterSituacaoAcessoAdministrativo(empresa, licencasDaEmpresa, hoje);
+          const licencasIniciadas = licencasDaEmpresa
+            .filter(licenca => licenca.data_inicio <= hoje)
+            .sort((a, b) => b.data_inicio.localeCompare(a.data_inicio) ||
+              b.criada_em.localeCompare(a.criada_em) || b.id.localeCompare(a.id));
+          const licencaExibida = licencasIniciadas[0] || licencasDaEmpresa
+            .filter(licenca => licenca.data_inicio > hoje)
+            .sort((a, b) => a.data_inicio.localeCompare(b.data_inicio))[0];
+
+          if (situacaoAcesso === 'Vigente') vigentes += 1;
+          if (situacaoAcesso === 'Vencida') vencidas += 1;
+
+          const linha = document.createElement('tr');
+          linha.append(
+            criarCelula(empresa.nome || '—', 'p-3 font-medium text-slate-200'),
+            criarCelula(empresa.situacao || '—', 'p-3'),
+            criarCelula(formatarDataAdministrativa(licencaExibida?.data_inicio), 'p-3'),
+            criarCelula(formatarDataAdministrativa(licencaExibida?.data_vencimento), 'p-3'),
+            criarCelula(situacaoAcesso, 'p-3 font-medium')
+          );
+          corpo.append(linha);
+        });
+
+        if (!empresas.length) {
+          const linhaVazia = document.createElement('tr');
+          const celulaVazia = document.createElement('td');
+          celulaVazia.colSpan = 5;
+          celulaVazia.className = 'p-4 text-center text-slate-500';
+          celulaVazia.textContent = 'Nenhuma empresa cadastrada.';
+          linhaVazia.append(celulaVazia);
+          corpo.append(linhaVazia);
+        }
+
+        document.getElementById('admin-total-empresas').textContent = String(empresas.length);
+        document.getElementById('admin-total-licencas-vigentes').textContent = String(vigentes);
+        document.getElementById('admin-total-licencas-vencidas').textContent = String(vencidas);
+        status.textContent = `Dados atualizados em ${formatarDataAdministrativa(hoje)}.`;
+      } catch (error) {
+        if (versaoCarga !== versaoCargaAdmin) return;
+        console.error('Erro ao carregar o painel administrativo:', error);
+        corpo.replaceChildren();
+        const linhaErro = document.createElement('tr');
+        const celulaErro = document.createElement('td');
+        celulaErro.colSpan = 5;
+        celulaErro.className = 'p-4 text-center text-rose-400';
+        celulaErro.textContent = 'Não foi possível carregar os dados administrativos.';
+        linhaErro.append(celulaErro);
+        corpo.append(linhaErro);
+        status.textContent = `Erro ao consultar empresas e licenças: ${error.message || 'falha de comunicação'}`;
+      }
     }
 
     function inicializarClienteInsumos() {
       try {
+        if (supabaseInsumosClient) return;
         supabaseInsumosClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           auth: {
             storageKey: 'nobre-burger-insumos-auth',
@@ -893,6 +1249,17 @@
           window.setTimeout(() => {
             void atualizarAcessoInsumos(sessao).catch(error => {
               console.error('Erro ao verificar acesso ao módulo de insumos:', error);
+              empresaInsumosAutorizada = false;
+              empresaAutorizadaId = null;
+              supabaseClient = null;
+              usuarioPainelCarregadoId = null;
+              painelDesbloqueado = false;
+              document.getElementById('painel-senha').hidden = false;
+              document.getElementById('app-cabecalho').hidden = true;
+              document.getElementById('app-conteudo').hidden = true;
+              document.getElementById('botao-sair-login').hidden = !sessao;
+              document.getElementById('mensagem-senha').textContent =
+                'Erro ao verificar o vínculo com a empresa. Tente atualizar a página.';
               document.getElementById('status-login-insumos').textContent =
                 'Erro ao verificar acesso. Tente atualizar a página.';
             });
@@ -905,13 +1272,20 @@
           return atualizarAcessoInsumos(data.session);
         }).catch(error => {
           console.error('Erro ao restaurar sessão do módulo de insumos:', error);
+          document.getElementById('painel-senha').hidden = false;
+          document.getElementById('app-cabecalho').hidden = true;
+          document.getElementById('app-conteudo').hidden = true;
           document.getElementById('status-login-insumos').textContent =
+            'Não foi possível verificar a sessão. Atualize a página e tente novamente.';
+          document.getElementById('mensagem-senha').textContent =
             'Não foi possível verificar a sessão. Atualize a página e tente novamente.';
         });
       } catch (error) {
         console.error('Erro ao inicializar autenticação de insumos:', error);
         document.getElementById('status-login-insumos').textContent =
           'Não foi possível inicializar o acesso seguro ao módulo de insumos.';
+        document.getElementById('mensagem-senha').textContent =
+          'Não foi possível inicializar o acesso seguro. Atualize a página e tente novamente.';
       }
     }
 
@@ -927,7 +1301,22 @@
 
       if (!sessao) {
         empresaInsumosAutorizada = false;
+        empresaAutorizadaId = null;
+        administradorPlataforma = false;
+        usuarioAdminPainelCarregadoId = null;
+        supabaseClient = null;
+        usuarioPainelCarregadoId = null;
+        painelDesbloqueado = false;
         limparDadosInsumos();
+        atualizarVisibilidadePrecificacao(false);
+        document.getElementById('painel-senha').hidden = false;
+        document.getElementById('app-cabecalho').hidden = true;
+        document.getElementById('app-conteudo').hidden = true;
+        document.getElementById('botao-sair-painel').hidden = true;
+        document.getElementById('botao-sair-login').hidden = true;
+        document.getElementById('aba-administracao').hidden = true;
+        document.getElementById('painel-administracao').hidden = true;
+        document.getElementById('mensagem-senha').textContent = '';
         login.hidden = false;
         conteudo.hidden = true;
         fichasLogin.hidden = false;
@@ -940,6 +1329,25 @@
       }
 
       status.textContent = 'Verificando acesso à empresa...';
+      document.getElementById('painel-senha').hidden = false;
+      document.getElementById('app-cabecalho').hidden = true;
+      document.getElementById('app-conteudo').hidden = true;
+      document.getElementById('botao-sair-painel').hidden = true;
+      document.getElementById('mensagem-senha').textContent = 'Verificando o vínculo com a empresa...';
+      document.getElementById('botao-sair-login').hidden = false;
+      let erroVerificacaoAdmin = null;
+      try {
+        await verificarAdministradorPlataforma();
+      } catch (errorAdmin) {
+        administradorPlataforma = false;
+        usuarioAdminPainelCarregadoId = null;
+        document.getElementById('aba-administracao').hidden = true;
+        document.getElementById('painel-administracao').hidden = true;
+        limparPainelAdministrativo();
+        erroVerificacaoAdmin = errorAdmin;
+        console.error('Erro ao verificar permissão de administrador:', errorAdmin);
+      }
+
       const { data, error } = await supabaseInsumosClient
         .from('usuario_empresa')
         .select('empresa_id')
@@ -950,8 +1358,15 @@
       if (versaoAtual !== versaoSessaoInsumos || sessaoInsumos?.user.id !== sessao.user.id) return;
 
       if (error) {
+        if (administradorPlataforma) {
+          abrirPainelAdministrativoSemVinculo();
+          return;
+        }
         empresaInsumosAutorizada = false;
+        empresaAutorizadaId = null;
+        supabaseClient = null;
         limparDadosInsumos();
+        atualizarVisibilidadePrecificacao(false);
         login.hidden = false;
         conteudo.hidden = true;
         fichasLogin.hidden = false;
@@ -959,12 +1374,22 @@
         botaoSair.hidden = false;
         botaoAtualizar.hidden = true;
         status.textContent = 'Erro ao verificar o vínculo com a empresa: ' + error.message;
+        document.getElementById('mensagem-senha').textContent =
+          'Erro ao verificar o vínculo com a empresa: ' + error.message;
+        document.getElementById('botao-sair-painel').hidden = false;
         return;
       }
 
       if (!data) {
+        if (administradorPlataforma) {
+          abrirPainelAdministrativoSemVinculo();
+          return;
+        }
         empresaInsumosAutorizada = false;
+        empresaAutorizadaId = null;
+        supabaseClient = null;
         limparDadosInsumos();
+        atualizarVisibilidadePrecificacao(false);
         login.hidden = false;
         conteudo.hidden = true;
         fichasLogin.hidden = false;
@@ -972,10 +1397,20 @@
         botaoSair.hidden = false;
         botaoAtualizar.hidden = true;
         status.textContent = 'Esta conta está autenticada, mas não tem vínculo autorizado com a empresa do Nobre Burger.';
+        document.getElementById('mensagem-senha').textContent =
+          'Esta conta não tem vínculo autorizado com a empresa do Nobre Burger.';
+        document.getElementById('botao-sair-painel').hidden = false;
         return;
       }
 
       empresaInsumosAutorizada = true;
+      empresaAutorizadaId = data.empresa_id;
+      usuarioAdminPainelCarregadoId = sessao.user.id;
+      atualizarVisibilidadePrecificacao(true);
+      if (!administradorPlataforma &&
+          document.getElementById('aba-administracao').getAttribute('aria-selected') === 'true') {
+        mostrarSecaoPainel('financeiro');
+      }
       login.hidden = true;
       conteudo.hidden = false;
       fichasLogin.hidden = true;
@@ -983,7 +1418,248 @@
       botaoSair.hidden = false;
       botaoAtualizar.hidden = false;
       status.textContent = '';
+      document.getElementById('mensagem-senha').textContent = '';
+      document.getElementById('botao-sair-login').hidden = true;
+      inicializarPainel();
+      if (erroVerificacaoAdmin) {
+        const badge = document.getElementById('status-conexao');
+        badge.textContent = 'Admin não verificado';
+        badge.className = 'text-xs px-3 py-1 rounded-full bg-amber-950 text-amber-400 border border-amber-800 font-medium';
+      }
       await carregarInsumos();
+      if (document.getElementById('painel-precificacao').hidden === false) {
+        await carregarConfiguracoesPrecificacao();
+      }
+    }
+
+    function atualizarVisibilidadePrecificacao(autorizado) {
+      document.getElementById('precificacao-login').hidden = autorizado;
+      document.getElementById('precificacao-conteudo').hidden = !autorizado;
+      if (!autorizado) {
+        configuracaoPrecificacaoCarregada = false;
+        versaoCargaConfiguracaoPrecificacao += 1;
+        definirValoresPadraoConfiguracaoPrecificacao();
+        document.getElementById('status-configuracoes-precificacao').textContent = '';
+      }
+      document.getElementById('botao-salvar-configuracoes-precificacao').disabled =
+        !autorizado || !configuracaoPrecificacaoCarregada;
+    }
+
+    function definirValoresPadraoConfiguracaoPrecificacao() {
+      document.getElementById('precificacao-gas').value = '130.00';
+      document.getElementById('precificacao-oleo').value = '42.00';
+      document.getElementById('precificacao-taxa-cartao').value = '0';
+      document.getElementById('precificacao-producao-mensal').value = '0';
+      renderizarTaxasPrecificacao([]);
+    }
+
+    function criarLinhaTaxaPrecificacao(taxa = {}) {
+      const linha = document.createElement('div');
+      linha.className = 'grid grid-cols-1 sm:grid-cols-[1fr_10rem_auto] gap-3 items-end bg-slate-900 border border-slate-700 rounded-lg p-3';
+
+      const campoNome = document.createElement('label');
+      campoNome.className = 'block text-sm text-slate-300';
+      campoNome.textContent = 'Nome da taxa';
+      const entradaNome = document.createElement('input');
+      entradaNome.type = 'text';
+      entradaNome.maxLength = 80;
+      entradaNome.required = true;
+      entradaNome.value = typeof taxa.nome === 'string' ? taxa.nome : '';
+      entradaNome.dataset.taxaNome = 'true';
+      entradaNome.className = 'mt-1 w-full bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500';
+      campoNome.appendChild(entradaNome);
+
+      const campoPercentual = document.createElement('label');
+      campoPercentual.className = 'block text-sm text-slate-300';
+      campoPercentual.textContent = 'Percentual (%)';
+      const entradaPercentual = document.createElement('input');
+      entradaPercentual.type = 'number';
+      entradaPercentual.min = '0';
+      entradaPercentual.max = '100';
+      entradaPercentual.step = '0.0001';
+      entradaPercentual.required = true;
+      entradaPercentual.value = Number.isFinite(Number(taxa.percentual)) ? String(taxa.percentual) : '0';
+      entradaPercentual.dataset.taxaPercentual = 'true';
+      entradaPercentual.className = 'mt-1 w-full bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500';
+      campoPercentual.appendChild(entradaPercentual);
+
+      const botaoRemover = document.createElement('button');
+      botaoRemover.type = 'button';
+      botaoRemover.textContent = 'Remover';
+      botaoRemover.className = 'bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm cursor-pointer';
+      botaoRemover.addEventListener('click', () => linha.remove());
+
+      linha.append(campoNome, campoPercentual, botaoRemover);
+      return linha;
+    }
+
+    function renderizarTaxasPrecificacao(taxas) {
+      const lista = document.getElementById('lista-outras-taxas-precificacao');
+      lista.replaceChildren();
+      taxas.forEach(taxa => lista.appendChild(criarLinhaTaxaPrecificacao(taxa)));
+    }
+
+    function adicionarTaxaPrecificacao() {
+      document.getElementById('lista-outras-taxas-precificacao')
+        .appendChild(criarLinhaTaxaPrecificacao());
+    }
+
+    async function carregarConfiguracoesPrecificacao() {
+      if (!supabaseInsumosClient || !sessaoInsumos || !empresaInsumosAutorizada) return;
+
+      const versaoAtual = ++versaoCargaConfiguracaoPrecificacao;
+      const botaoSalvar = document.getElementById('botao-salvar-configuracoes-precificacao');
+      const status = document.getElementById('status-configuracoes-precificacao');
+      configuracaoPrecificacaoCarregada = false;
+      botaoSalvar.disabled = true;
+      status.textContent = 'Carregando configurações da empresa...';
+
+      let data, error;
+      try {
+        ({ data, error } = await supabaseInsumosClient
+          .from('configuracoes_precificacao')
+          .select('empresa_id, custo_mensal_gas, custo_mensal_oleo_fritadeira, taxa_cartao_percentual, outras_taxas_percentuais, producao_mensal_estimada')
+          .eq('empresa_id', empresaAutorizadaId)
+          .maybeSingle());
+      } catch (requestError) {
+        if (versaoAtual !== versaoCargaConfiguracaoPrecificacao) return;
+        status.textContent = 'Falha de comunicação ao carregar configurações: ' + requestError.message;
+        return;
+      }
+
+      if (versaoAtual !== versaoCargaConfiguracaoPrecificacao ||
+          !sessaoInsumos || !empresaInsumosAutorizada) return;
+
+      if (error) {
+        status.textContent = 'Erro ao carregar configurações: ' + error.message;
+        return;
+      }
+
+      if (!data) {
+        definirValoresPadraoConfiguracaoPrecificacao();
+        configuracaoPrecificacaoCarregada = true;
+        botaoSalvar.disabled = false;
+        status.textContent = 'Ainda não há configurações salvas. Os valores iniciais estão preenchidos; salve para criar o registro.';
+        return;
+      }
+
+      const camposNumericos = [
+        ['custo_mensal_gas', 0, 999999999999.99],
+        ['custo_mensal_oleo_fritadeira', 0, 999999999999.99],
+        ['taxa_cartao_percentual', 0, 100],
+        ['producao_mensal_estimada', 0, 2147483647]
+      ];
+      const registroValido = camposNumericos.every(([campo, minimo, maximo]) => {
+        const valor = Number(data[campo]);
+        return Number.isFinite(valor) && valor >= minimo && valor <= maximo;
+      }) && Number.isInteger(Number(data.producao_mensal_estimada)) &&
+        Array.isArray(data.outras_taxas_percentuais) &&
+        data.outras_taxas_percentuais.every(taxa =>
+          taxa && typeof taxa.nome === 'string' && taxa.nome.trim() &&
+          typeof taxa.percentual === 'number' && Number.isFinite(taxa.percentual) &&
+          taxa.percentual >= 0 && taxa.percentual <= 100
+        );
+
+      if (!registroValido) {
+        status.textContent = 'As configurações salvas contêm dados inválidos. Corrija os dados no Supabase antes de salvar para evitar sobrescrevê-los.';
+        return;
+      }
+
+      document.getElementById('precificacao-gas').value = String(data.custo_mensal_gas);
+      document.getElementById('precificacao-oleo').value = String(data.custo_mensal_oleo_fritadeira);
+      document.getElementById('precificacao-taxa-cartao').value = String(data.taxa_cartao_percentual);
+      document.getElementById('precificacao-producao-mensal').value = String(data.producao_mensal_estimada);
+      renderizarTaxasPrecificacao(data.outras_taxas_percentuais);
+      configuracaoPrecificacaoCarregada = true;
+      botaoSalvar.disabled = false;
+      status.textContent = 'Configurações carregadas.';
+    }
+
+    async function salvarConfiguracoesPrecificacao(event) {
+      event.preventDefault();
+      const form = document.getElementById('form-configuracoes-precificacao');
+      const status = document.getElementById('status-configuracoes-precificacao');
+      const botaoSalvar = document.getElementById('botao-salvar-configuracoes-precificacao');
+
+      if (!sessaoInsumos || !empresaInsumosAutorizada) {
+        status.textContent = 'Entre com uma conta autorizada antes de salvar.';
+        return;
+      }
+      if (!configuracaoPrecificacaoCarregada) {
+        status.textContent = 'As configurações ainda não foram carregadas. Tente abrir novamente esta aba antes de salvar.';
+        return;
+      }
+      if (!form.reportValidity()) return;
+
+      const taxas = Array.from(document.querySelectorAll('#lista-outras-taxas-precificacao > div'))
+        .map(linha => ({
+          nome: linha.querySelector('[data-taxa-nome]').value.trim(),
+          percentual: Number(linha.querySelector('[data-taxa-percentual]').value)
+        }));
+      const nomesTaxas = taxas.map(taxa => taxa.nome.toLocaleLowerCase('pt-BR'));
+
+      if (taxas.some(taxa => !taxa.nome)) {
+        status.textContent = 'Informe o nome de todas as taxas adicionais.';
+        return;
+      }
+      if (new Set(nomesTaxas).size !== nomesTaxas.length) {
+        status.textContent = 'Cada taxa adicional deve ter um nome diferente.';
+        return;
+      }
+
+      const dados = {
+        custo_mensal_gas: Number(document.getElementById('precificacao-gas').value),
+        custo_mensal_oleo_fritadeira: Number(document.getElementById('precificacao-oleo').value),
+        taxa_cartao_percentual: Number(document.getElementById('precificacao-taxa-cartao').value),
+        outras_taxas_percentuais: taxas,
+        producao_mensal_estimada: Number(document.getElementById('precificacao-producao-mensal').value)
+      };
+
+      botaoSalvar.disabled = true;
+      status.textContent = 'Salvando configurações...';
+      try {
+        const { data: existente, error: erroConsulta } = await supabaseInsumosClient
+          .from('configuracoes_precificacao')
+          .select('empresa_id')
+          .eq('empresa_id', empresaAutorizadaId)
+          .maybeSingle();
+
+        if (erroConsulta) {
+          status.textContent = 'Erro ao verificar as configurações existentes: ' + erroConsulta.message;
+          return;
+        }
+
+        let resultado;
+        if (existente) {
+          resultado = await supabaseInsumosClient
+            .from('configuracoes_precificacao')
+            .update(dados)
+            .eq('empresa_id', empresaAutorizadaId)
+            .select('empresa_id')
+            .maybeSingle();
+        } else {
+          resultado = await supabaseInsumosClient
+            .from('configuracoes_precificacao')
+            .insert({ ...dados, empresa_id: empresaAutorizadaId })
+            .select('empresa_id')
+            .single();
+        }
+
+        if (resultado.error) {
+          status.textContent = 'Erro ao salvar configurações: ' + resultado.error.message;
+          return;
+        }
+        if (!resultado.data) {
+          status.textContent = 'As configurações não foram salvas. Verifique o vínculo e as permissões da empresa.';
+          return;
+        }
+
+        status.textContent = 'Configurações salvas com sucesso.';
+      } catch (requestError) {
+        status.textContent = 'Falha de comunicação ao salvar configurações: ' + requestError.message;
+      } finally {
+        botaoSalvar.disabled = !configuracaoPrecificacaoCarregada || !empresaInsumosAutorizada;
+      }
     }
 
     function limparDadosInsumos() {
@@ -1122,7 +1798,7 @@
       }
 
       const dados = {
-        empresa_id: EMPRESA_ID,
+        empresa_id: empresaAutorizadaId,
         nome: document.getElementById('insumo-nome').value.trim(),
         categoria: document.getElementById('insumo-categoria').value,
         unidade_compra: document.getElementById('insumo-unidade').value,
@@ -1140,7 +1816,7 @@
             .from('insumos')
             .update(dados)
             .eq('id', insumoEmEdicao)
-            .eq('empresa_id', EMPRESA_ID);
+            .eq('empresa_id', empresaAutorizadaId);
         } else {
           resultado = await supabaseInsumosClient.from('insumos').insert(dados);
         }
@@ -1212,7 +1888,7 @@
           .from('insumos')
           .update({ ativo: novoStatus })
           .eq('id', insumo.id)
-          .eq('empresa_id', EMPRESA_ID));
+          .eq('empresa_id', empresaAutorizadaId));
       } catch (requestError) {
         document.getElementById('status-lista-insumos').textContent =
           `Falha de comunicação ao ${verbo} insumo: ${requestError.message}`;
@@ -1240,7 +1916,7 @@
         ({ data, error } = await supabaseInsumosClient
           .from('insumos')
           .select('id, empresa_id, nome, categoria, unidade_compra, quantidade_referencia, valor_pago, unidade_base, quantidade_base, custo_por_unidade_base, estoque_minimo, ativo, criado_em, atualizado_em')
-          .eq('empresa_id', EMPRESA_ID)
+          .eq('empresa_id', empresaAutorizadaId)
           .order('nome', { ascending: true }));
       } catch (requestError) {
         listaInsumos = [];
@@ -1368,7 +2044,7 @@
         ({ data, error } = await supabaseInsumosClient
           .from('insumo_historico_precos')
           .select('quantidade_referencia, unidade_compra, valor_pago, unidade_base, custo_por_unidade_base, origem, registrado_em')
-          .eq('empresa_id', EMPRESA_ID)
+          .eq('empresa_id', empresaAutorizadaId)
           .eq('insumo_id', insumo.id)
           .order('registrado_em', { ascending: false }));
       } catch (requestError) {
@@ -1582,7 +2258,7 @@
       let resultado;
       try {
         resultado = await supabaseInsumosClient.rpc('salvar_ficha_tecnica', {
-          p_empresa_id: EMPRESA_ID,
+          p_empresa_id: empresaAutorizadaId,
           p_ficha_id: fichaEmEdicao,
           p_nome: document.getElementById('ficha-nome').value.trim(),
           p_categoria: document.getElementById('ficha-categoria').value.trim(),
@@ -1635,12 +2311,12 @@
           supabaseInsumosClient
             .from('vw_fichas_tecnicas_custos')
             .select('id, empresa_id, nome, categoria, descricao, preco_venda, ativo, quantidade_insumos, custo_total_producao, lucro_estimado, margem_lucro_pct, criado_em, atualizado_em')
-            .eq('empresa_id', EMPRESA_ID)
+            .eq('empresa_id', empresaAutorizadaId)
             .order('nome', { ascending: true }),
           supabaseInsumosClient
             .from('ficha_tecnica_insumos')
             .select('id, empresa_id, ficha_tecnica_id, insumo_id, quantidade_base, observacao')
-            .eq('empresa_id', EMPRESA_ID)
+            .eq('empresa_id', empresaAutorizadaId)
         ]);
       } catch (error) {
         listaFichas = [];
@@ -1787,7 +2463,7 @@
           .from('fichas_tecnicas')
           .update({ ativo: novoStatus })
           .eq('id', ficha.id)
-          .eq('empresa_id', EMPRESA_ID));
+          .eq('empresa_id', empresaAutorizadaId));
       } catch (requestError) {
         document.getElementById('status-lista-fichas').textContent =
           `Falha de comunicação ao ${verbo} ficha: ${requestError.message}`;
@@ -1872,7 +2548,7 @@
           const colunas = linha.split(';').map(c => c.replace(/^"|"$/g, '').trim());
           if (colunas.length >= 8 && colunas[0] && colunas[0].match(/^\d+$/)) {
             dadosParaInserir.push({
-              empresa_id: EMPRESA_ID,
+              empresa_id: empresaAutorizadaId,
               numero_pedido: '#' + colunas[0],
               data_hora: colunas[1] || '-',
               cliente: colunas[2] || '-',
@@ -1904,7 +2580,7 @@
         if (String(colunas[0] || '').toLowerCase().includes('pedido')) continue;
 
         dadosParaInserir.push({
-          empresa_id: EMPRESA_ID,
+          empresa_id: empresaAutorizadaId,
           numero_pedido: '#' + pedido,
           data_hora: colunas[1] || '-',
           cliente: colunas[2] || '-',
@@ -1923,6 +2599,10 @@
       const fileInput = document.getElementById('input-excel');
       const statusDiv = document.getElementById('status-importacao');
 
+      if (!sessaoInsumos || !empresaInsumosAutorizada || !empresaAutorizadaId || !supabaseClient) {
+        statusDiv.textContent = 'Entre com uma conta autorizada antes de importar pedidos.';
+        return;
+      }
       if (fileInput.files.length === 0) {
         alert('Por favor, seleciona um arquivo do PedeApp primeiro!');
         return;
@@ -1977,6 +2657,10 @@
       const dataInput = document.getElementById('custo-data').value;
       const statusDiv = document.getElementById('status-custo');
 
+      if (!sessaoInsumos || !empresaInsumosAutorizada || !empresaAutorizadaId || !supabaseClient) {
+        statusDiv.textContent = 'Entre com uma conta autorizada antes de registar despesas.';
+        return;
+      }
       if (!desc || !valor || !dataInput) {
         alert('Preenche todos os campos do custo!');
         return;
@@ -1986,7 +2670,7 @@
       const dataFormatada = `${partes[2]}/${partes[1]}/${partes[0]}`;
 
       const { error } = await supabaseClient.from('custos').insert([
-        { empresa_id: EMPRESA_ID, descricao: desc, categoria: cat, valor: valor, data: dataFormatada }
+        { empresa_id: empresaAutorizadaId, descricao: desc, categoria: cat, valor: valor, data: dataFormatada }
       ]);
 
       if (error) {
@@ -2006,6 +2690,10 @@
       const total = Number(document.getElementById('venda-valor').value);
       const statusDiv = document.getElementById('status-venda');
 
+      if (!sessaoInsumos || !empresaInsumosAutorizada || !empresaAutorizadaId || !supabaseClient) {
+        statusDiv.textContent = 'Entre com uma conta autorizada antes de registar vendas.';
+        return;
+      }
       if (!descricao || !pagamento || !Number.isFinite(total) || total <= 0) {
         statusDiv.textContent = 'Preenche a descrição, a forma de pagamento e um valor total válido.';
         return;
@@ -2013,7 +2701,7 @@
 
       try {
         const { error } = await supabaseClient.from('vendas').insert([{
-          empresa_id: EMPRESA_ID,
+          empresa_id: empresaAutorizadaId,
           numero_pedido: 'Manual',
           data_hora: new Date().toLocaleString('pt-BR'),
           cliente: '-',
@@ -2065,11 +2753,20 @@
     }
 
     async function carregarDados() {
+      if (!sessaoInsumos || !empresaInsumosAutorizada || !empresaAutorizadaId || !supabaseClient) return;
       try {
-        const { data: vendas, error: errVendas } = await supabaseClient.from('vendas').select('*').order('id', { ascending: false });
+        const { data: vendas, error: errVendas } = await supabaseClient
+          .from('vendas')
+          .select('*')
+          .eq('empresa_id', empresaAutorizadaId)
+          .order('id', { ascending: false });
         if (errVendas) throw errVendas;
 
-        const { data: custos, error: errCustos } = await supabaseClient.from('custos').select('*').order('id', { ascending: false });
+        const { data: custos, error: errCustos } = await supabaseClient
+          .from('custos')
+          .select('*')
+          .eq('empresa_id', empresaAutorizadaId)
+          .order('id', { ascending: false });
         if (errCustos) throw errCustos;
 
         const dataInicioStr = document.getElementById('filtro-data-inicio').value;
@@ -2293,6 +2990,9 @@
       preencherTabelaRelatorio('relatorio-categorias', 3, linhasCategorias, 'Nenhuma despesa registada.');
 
     }
+
+    document.getElementById('mensagem-senha').textContent = 'Verificando sessão Supabase...';
+    inicializarClienteInsumos();
   </script>
 </body>
 </html>
