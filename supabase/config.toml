@@ -1,0 +1,2 @@
+[functions.convidar-cliente]
+verify_jwt = true

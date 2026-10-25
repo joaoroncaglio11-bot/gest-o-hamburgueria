@@ -852,7 +852,7 @@
     <section id="painel-administracao" hidden class="space-y-6">
       <div>
         <h2 class="text-xl font-semibold text-slate-100">Administração da plataforma</h2>
-        <p class="text-sm text-slate-400 mt-1">Visão geral das empresas e situação atual das licenças. Esta tela é somente para consulta.</p>
+        <p class="text-sm text-slate-400 mt-1">Consulte as empresas e licenças ou cadastre uma nova hamburgueria.</p>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -873,10 +873,46 @@
       <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h3 class="text-lg font-semibold text-slate-200">Empresas e licenças</h3>
-          <button type="button" onclick="carregarPainelAdministrativo()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm cursor-pointer">
-            Atualizar painel
-          </button>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <button id="botao-abrir-cadastro-empresa" type="button" hidden onclick="abrirFormularioCadastroEmpresa()" class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-medium px-3 py-2 rounded-lg text-sm cursor-pointer">
+              Cadastrar Hamburgueria
+            </button>
+            <button type="button" onclick="carregarPainelAdministrativo()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm cursor-pointer">
+              Atualizar painel
+            </button>
+          </div>
         </div>
+        <form id="form-cadastro-empresa" hidden onsubmit="cadastrarEmpresaAdministrativa(event)" class="bg-slate-900 border border-slate-700 rounded-lg p-4 sm:p-5 space-y-4">
+          <div>
+            <h4 class="text-base font-semibold text-slate-100">Cadastrar hamburgueria</h4>
+            <p class="text-sm text-amber-300 mt-1">Este cadastro cria a empresa e a licença, mas NÃO cria uma conta de login para o cliente. O convite seguro será feito em outra etapa.</p>
+          </div>
+          <div>
+            <label for="cadastro-empresa-nome" class="block text-sm text-slate-300 mb-1">Nome da hamburgueria</label>
+            <input id="cadastro-empresa-nome" type="text" maxlength="120" required autocomplete="organization" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg p-3 focus:outline-none focus:border-amber-500">
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="cadastro-empresa-data-inicio" class="block text-sm text-slate-300 mb-1">Data de início da licença</label>
+              <input id="cadastro-empresa-data-inicio" type="date" required oninput="atualizarPrevisaoVencimentoLicenca()" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg p-3 focus:outline-none focus:border-amber-500">
+            </div>
+            <div class="space-y-2">
+              <p class="text-sm text-slate-300">Valor da licença</p>
+              <p class="text-sm font-semibold text-amber-400">R$ 100,00 <span class="font-normal text-slate-400">(informativo)</span></p>
+              <p class="text-sm text-slate-300">Previsão do vencimento</p>
+              <p id="cadastro-empresa-previsao-vencimento" class="text-sm font-medium text-slate-200">Informe a data de início.</p>
+            </div>
+          </div>
+          <div class="flex flex-col-reverse sm:flex-row sm:items-center gap-2">
+            <button id="botao-confirmar-cadastro-empresa" type="submit" class="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium px-4 py-2 rounded-lg text-sm cursor-pointer">
+              Confirmar cadastro
+            </button>
+            <button id="botao-cancelar-cadastro-empresa" type="button" onclick="fecharFormularioCadastroEmpresa()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg text-sm cursor-pointer">
+              Cancelar
+            </button>
+          </div>
+        </form>
+        <p id="status-cadastro-empresa" class="text-sm text-slate-300" role="status" aria-live="polite"></p>
         <div class="overflow-x-auto rounded-lg border border-slate-700">
           <table class="w-full text-left text-sm text-slate-300">
             <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
@@ -1050,8 +1086,10 @@
       }
       administradorPlataforma = data;
       document.getElementById('aba-administracao').hidden = !data;
+      document.getElementById('botao-abrir-cadastro-empresa').hidden = !data;
       if (!data) {
         document.getElementById('painel-administracao').hidden = true;
+        document.getElementById('form-cadastro-empresa').hidden = true;
         usuarioAdminPainelCarregadoId = null;
         limparPainelAdministrativo();
       }
@@ -1112,6 +1150,165 @@
       return `${ano}-${mes}-${dia}`;
     }
 
+    function calcularVencimentoLicencaAdmin(dataInicio) {
+      const correspondencia = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dataInicio || '');
+      if (!correspondencia) return null;
+
+      const ano = Number(correspondencia[1]);
+      const mes = Number(correspondencia[2]);
+      const dia = Number(correspondencia[3]);
+      const bissexto = ano % 4 === 0 && (ano % 100 !== 0 || ano % 400 === 0);
+      const diasDoMesBase = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+      const diasNoMes = diasDoMesBase.slice();
+      if (bissexto) diasNoMes[1] = 29;
+      if (ano < 1 || mes < 1 || mes > 12 || dia < 1 || dia > diasNoMes[mes - 1] || ano >= 9999) {
+        return null;
+      }
+
+      const anoVencimento = ano + 1;
+      const bissextoVencimento =
+        anoVencimento % 4 === 0 && (anoVencimento % 100 !== 0 || anoVencimento % 400 === 0);
+      const diasNoMesVencimento =
+        mes === 2 && bissextoVencimento ? 29 : diasDoMesBase[mes - 1];
+      let diaVencimento = Math.min(dia, diasNoMesVencimento) - 1;
+      let mesVencimento = mes;
+      let anoFinal = anoVencimento;
+      if (diaVencimento === 0) {
+        mesVencimento -= 1;
+        if (mesVencimento === 0) {
+          mesVencimento = 12;
+          anoFinal -= 1;
+        }
+        const bissextoMesAnterior =
+          anoFinal % 4 === 0 && (anoFinal % 100 !== 0 || anoFinal % 400 === 0);
+        diaVencimento = mesVencimento === 2 && bissextoMesAnterior
+          ? 29
+          : diasDoMesBase[mesVencimento - 1];
+      }
+
+      return `${anoFinal}-${String(mesVencimento).padStart(2, '0')}-${String(diaVencimento).padStart(2, '0')}`;
+    }
+
+    function atualizarPrevisaoVencimentoLicenca() {
+      const dataInicio = document.getElementById('cadastro-empresa-data-inicio').value;
+      const dataVencimento = calcularVencimentoLicencaAdmin(dataInicio);
+      document.getElementById('cadastro-empresa-previsao-vencimento').textContent =
+        dataVencimento ? formatarDataAdministrativa(dataVencimento) : 'Informe uma data válida.';
+    }
+
+    async function abrirFormularioCadastroEmpresa() {
+      const botaoAbrir = document.getElementById('botao-abrir-cadastro-empresa');
+      const formulario = document.getElementById('form-cadastro-empresa');
+      const status = document.getElementById('status-cadastro-empresa');
+      botaoAbrir.disabled = true;
+      status.textContent = 'Confirmando autorização administrativa...';
+
+      try {
+        if (!sessaoInsumos || !supabaseInsumosClient) {
+          throw new Error('Entre novamente para confirmar sua sessão.');
+        }
+        const autorizado = await verificarAdministradorPlataforma();
+        if (!autorizado) {
+          status.textContent = 'Somente administradores da plataforma podem cadastrar hamburguerias.';
+          return;
+        }
+
+        const campoData = document.getElementById('cadastro-empresa-data-inicio');
+        if (!campoData.value) campoData.value = obterDataAtualISO();
+        atualizarPrevisaoVencimentoLicenca();
+        status.textContent = '';
+        formulario.hidden = false;
+        document.getElementById('cadastro-empresa-nome').focus();
+      } catch (error) {
+        formulario.hidden = true;
+        status.textContent =
+          `Não foi possível confirmar a autorização administrativa: ${error.message || 'falha de comunicação'}`;
+      } finally {
+        botaoAbrir.disabled = false;
+      }
+    }
+
+    function fecharFormularioCadastroEmpresa() {
+      const formulario = document.getElementById('form-cadastro-empresa');
+      if (document.getElementById('botao-confirmar-cadastro-empresa').disabled) return;
+      formulario.hidden = true;
+      formulario.reset();
+      document.getElementById('cadastro-empresa-previsao-vencimento').textContent =
+        'Informe a data de início.';
+      document.getElementById('status-cadastro-empresa').textContent = '';
+    }
+
+    async function cadastrarEmpresaAdministrativa(event) {
+      event.preventDefault();
+      const formulario = document.getElementById('form-cadastro-empresa');
+      const campoNome = document.getElementById('cadastro-empresa-nome');
+      const campoData = document.getElementById('cadastro-empresa-data-inicio');
+      const botaoSalvar = document.getElementById('botao-confirmar-cadastro-empresa');
+      const botaoAbrir = document.getElementById('botao-abrir-cadastro-empresa');
+      const status = document.getElementById('status-cadastro-empresa');
+
+      if (!formulario.reportValidity()) return;
+
+      const nome = campoNome.value.trim();
+      const dataInicio = campoData.value;
+      const dataVencimento = calcularVencimentoLicencaAdmin(dataInicio);
+      if (!nome) {
+        status.textContent = 'Informe o nome da hamburgueria.';
+        campoNome.focus();
+        return;
+      }
+      if (nome.length > 120) {
+        status.textContent = 'O nome deve ter no máximo 120 caracteres.';
+        campoNome.focus();
+        return;
+      }
+      if (!dataVencimento) {
+        status.textContent = 'Informe uma data de início válida.';
+        campoData.focus();
+        return;
+      }
+
+      botaoSalvar.disabled = true;
+      botaoAbrir.disabled = true;
+      status.textContent = 'Confirmando autorização administrativa...';
+      try {
+        if (!sessaoInsumos || !supabaseInsumosClient) {
+          throw new Error('Entre novamente para confirmar sua sessão.');
+        }
+        const autorizado = await verificarAdministradorPlataforma();
+        if (!autorizado) {
+          throw new Error('Somente administradores da plataforma podem cadastrar hamburguerias.');
+        }
+
+        status.textContent = 'Cadastrando hamburgueria e licença...';
+        const { data, error } = await supabaseInsumosClient.rpc('cadastrar_empresa_admin', {
+          p_nome: nome,
+          p_data_inicio: dataInicio
+        });
+        if (error) throw error;
+
+        const cadastro = Array.isArray(data) ? data[0] : null;
+        if (!cadastro || !cadastro.nova_empresa_id || !cadastro.nova_licenca_id) {
+          throw new Error('A resposta do serviço não confirmou o cadastro da empresa e da licença.');
+        }
+
+        formulario.hidden = true;
+        formulario.reset();
+        document.getElementById('cadastro-empresa-previsao-vencimento').textContent =
+          'Informe a data de início.';
+        const painelAtualizado = await carregarPainelAdministrativo();
+        status.textContent = painelAtualizado
+          ? `Cadastro concluído: ${nome}. Licença de R$ 100,00 válida até ${formatarDataAdministrativa(dataVencimento)}. Nenhuma conta de login foi criada para o cliente.`
+          : `O cadastro de ${nome} foi concluído, mas não foi possível atualizar a lista. Use “Atualizar painel”. Nenhuma conta de login foi criada para o cliente.`;
+      } catch (error) {
+        console.error('Erro ao cadastrar hamburgueria:', error);
+        status.textContent = `Não foi possível cadastrar a hamburgueria: ${error.message || 'falha de comunicação'}`;
+      } finally {
+        botaoSalvar.disabled = false;
+        botaoAbrir.disabled = false;
+      }
+    }
+
     function obterSituacaoAcessoAdministrativo(empresa, licencas, hoje) {
       if (empresa.situacao === 'suspensa') return 'Suspensa';
       if (empresa.situacao === 'encerrada') return 'Encerrada';
@@ -1140,7 +1337,7 @@
       if (!administradorPlataforma || !sessaoInsumos || !supabaseInsumosClient) {
         corpo.replaceChildren();
         status.textContent = 'Acesso administrativo não autorizado.';
-        return;
+        return false;
       }
 
       status.textContent = 'Carregando empresas e licenças...';
@@ -1169,7 +1366,7 @@
         if (respostaLicencas.error) throw respostaLicencas.error;
         if (versaoCarga !== versaoCargaAdmin ||
             !administradorPlataforma ||
-            sessaoInsumos?.user.id !== usuarioAdminPainelCarregadoId) return;
+            sessaoInsumos?.user.id !== usuarioAdminPainelCarregadoId) return false;
 
         const empresas = respostaEmpresas.data || [];
         const licencas = respostaLicencas.data || [];
@@ -1217,8 +1414,9 @@
         document.getElementById('admin-total-licencas-vigentes').textContent = String(vigentes);
         document.getElementById('admin-total-licencas-vencidas').textContent = String(vencidas);
         status.textContent = `Dados atualizados em ${formatarDataAdministrativa(hoje)}.`;
+        return true;
       } catch (error) {
-        if (versaoCarga !== versaoCargaAdmin) return;
+        if (versaoCarga !== versaoCargaAdmin) return false;
         console.error('Erro ao carregar o painel administrativo:', error);
         corpo.replaceChildren();
         const linhaErro = document.createElement('tr');
@@ -1229,6 +1427,7 @@
         linhaErro.append(celulaErro);
         corpo.append(linhaErro);
         status.textContent = `Erro ao consultar empresas e licenças: ${error.message || 'falha de comunicação'}`;
+        return false;
       }
     }
 
@@ -1342,6 +1541,8 @@
         administradorPlataforma = false;
         usuarioAdminPainelCarregadoId = null;
         document.getElementById('aba-administracao').hidden = true;
+        document.getElementById('botao-abrir-cadastro-empresa').hidden = true;
+        document.getElementById('form-cadastro-empresa').hidden = true;
         document.getElementById('painel-administracao').hidden = true;
         limparPainelAdministrativo();
         erroVerificacaoAdmin = errorAdmin;
