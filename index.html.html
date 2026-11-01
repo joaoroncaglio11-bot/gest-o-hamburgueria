@@ -277,7 +277,7 @@
     </nav>
 
     <div id="painel-financeiro" class="space-y-6">
-    <h2 class="text-lg font-semibold text-slate-200">Resumo do mês atual</h2>
+    <h2 id="titulo-resumo-periodo" class="text-lg font-semibold text-slate-200">Resumo do mês atual</h2>
 
     <!-- CARDS DE RESUMO (KPIs) -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-4">
@@ -316,16 +316,24 @@
     <section class="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
       <div class="flex items-center gap-2 w-full md:w-auto flex-wrap">
         <span class="text-sm text-slate-300 font-semibold">Filtrar Período:</span>
-        <div class="flex items-center gap-1">
-          <span class="text-xs text-slate-400">De:</span>
-          <input type="date" id="filtro-data-inicio" onclick="if (this.showPicker) this.showPicker()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500 cursor-pointer">
-        </div>
-        <div class="flex items-center gap-1">
-          <span class="text-xs text-slate-400">Até:</span>
-          <input type="date" id="filtro-data-fim" onclick="if (this.showPicker) this.showPicker()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500 cursor-pointer">
+        <select id="filtro-periodo-resumo" onchange="alterarPeriodoResumo()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500">
+          <option value="mes">Este mês</option>
+          <option value="ultimos-30-dias">Últimos 30 dias</option>
+          <option value="especifico">Período específico</option>
+          <option value="todos">Todos os períodos</option>
+        </select>
+        <div id="campos-periodo-especifico" class="hidden flex items-center gap-2 flex-wrap">
+          <div class="flex items-center gap-1">
+            <label for="filtro-data-inicio" class="text-xs text-slate-400">De:</label>
+            <input type="date" id="filtro-data-inicio" onclick="if (this.showPicker) this.showPicker()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500 cursor-pointer">
+          </div>
+          <div class="flex items-center gap-1">
+            <label for="filtro-data-fim" class="text-xs text-slate-400">Até:</label>
+            <input type="date" id="filtro-data-fim" onclick="if (this.showPicker) this.showPicker()" class="bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg p-2 focus:outline-none focus:border-amber-500 cursor-pointer">
+          </div>
         </div>
         <button onclick="carregarDados()" class="bg-amber-600 hover:bg-amber-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors cursor-pointer">
-          Filtrar
+          Aplicar período
         </button>
         <button onclick="limparFiltro()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer">
           Ver Todos
@@ -2953,8 +2961,48 @@
       return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
     }
 
+    function formatarDataISO(data) {
+      const ano = data.getFullYear();
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const dia = String(data.getDate()).padStart(2, '0');
+      return `${ano}-${mes}-${dia}`;
+    }
+
+    function formatarDataPeriodo(data) {
+      const [ano, mes, dia] = data.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function alterarPeriodoResumo() {
+      const periodo = document.getElementById('filtro-periodo-resumo').value;
+      const camposEspecificos = document.getElementById('campos-periodo-especifico');
+      const dataInicio = document.getElementById('filtro-data-inicio');
+      const dataFim = document.getElementById('filtro-data-fim');
+      const periodoEspecifico = periodo === 'especifico';
+
+      camposEspecificos.classList.toggle('hidden', !periodoEspecifico);
+      dataInicio.required = periodoEspecifico;
+      dataFim.required = periodoEspecifico;
+      dataFim.setCustomValidity('');
+
+      if (!periodoEspecifico) void carregarDados();
+    }
+
     async function carregarDados() {
       if (!sessaoInsumos || !empresaInsumosAutorizada || !empresaAutorizadaId || !supabaseClient) return;
+      const periodo = document.getElementById('filtro-periodo-resumo').value;
+      const dataInicioInput = document.getElementById('filtro-data-inicio');
+      const dataFimInput = document.getElementById('filtro-data-fim');
+
+      if (periodo === 'especifico') {
+        dataFimInput.setCustomValidity(
+          dataInicioInput.value && dataFimInput.value && dataInicioInput.value > dataFimInput.value
+            ? 'A data final deve ser igual ou posterior à data inicial.'
+            : ''
+        );
+        if (!dataInicioInput.reportValidity() || !dataFimInput.reportValidity()) return;
+      }
+
       try {
         const { data: vendas, error: errVendas } = await supabaseClient
           .from('vendas')
@@ -2970,52 +3018,60 @@
           .order('id', { ascending: false });
         if (errCustos) throw errCustos;
 
-        const dataInicioStr = document.getElementById('filtro-data-inicio').value;
-        const dataFimStr = document.getElementById('filtro-data-fim').value;
+        const hoje = new Date();
+        let dataInicioStr = '';
+        let dataFimStr = '';
 
-        let vendasFiltradas = vendas || [];
-        let custosFiltrados = custos || [];
-
-        if (dataInicioStr || dataFimStr) {
-          const dInicio = dataInicioStr || '0000-01-01';
-          const dFim = dataFimStr || '9999-12-31';
-
-          vendasFiltradas = (vendas || []).filter(v => {
-            const dataVenda = normalizarDataFiltro(v.data_hora);
-            return dataVenda !== null && dataVenda >= dInicio && dataVenda <= dFim;
-          });
-
-          custosFiltrados = (custos || []).filter(c => {
-            const dataCusto = normalizarDataFiltro(c.data);
-            return dataCusto !== null && dataCusto >= dInicio && dataCusto <= dFim;
-          });
+        if (periodo === 'mes') {
+          dataInicioStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
+          dataFimStr = formatarDataISO(hoje);
+        } else if (periodo === 'ultimos-30-dias') {
+          const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 29);
+          dataInicioStr = formatarDataISO(inicio);
+          dataFimStr = formatarDataISO(hoje);
+        } else if (periodo === 'especifico') {
+          dataInicioStr = dataInicioInput.value;
+          dataFimStr = dataFimInput.value;
         }
 
-        const hoje = new Date();
-        const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
-        const vendasMesAtual = (vendas || []).filter(v => {
-          const dataVenda = normalizarDataFiltro(v.data_hora);
-          return dataVenda !== null && dataVenda.slice(0, 7) === mesAtual;
-        });
-        const custosMesAtual = (custos || []).filter(c => {
-          const dataCusto = normalizarDataFiltro(c.data);
-          return dataCusto !== null && dataCusto.slice(0, 7) === mesAtual;
-        });
+        const filtrarPorPeriodo = (registros, obterData) => {
+          if (!dataInicioStr && !dataFimStr) return registros || [];
+          return (registros || []).filter(registro => {
+            const data = normalizarDataFiltro(obterData(registro));
+            return data !== null && data >= dataInicioStr && data <= dataFimStr;
+          });
+        };
+        const vendasFiltradas = filtrarPorPeriodo(vendas, venda => venda.data_hora);
+        const custosFiltrados = filtrarPorPeriodo(custos, custo => custo.data);
 
-        atualizarKPIs(vendasMesAtual, custosMesAtual);
+        atualizarKPIs(vendasFiltradas, custosFiltrados);
         preencherTabelaVendas(vendasFiltradas);
         preencherTabelaDespesas(custosFiltrados);
         atualizarRelatorios(vendasFiltradas, custosFiltrados);
 
+        const titulo = document.getElementById('titulo-resumo-periodo');
+        if (periodo === 'mes') {
+          titulo.textContent = 'Resumo do mês atual';
+        } else if (periodo === 'ultimos-30-dias') {
+          titulo.textContent = 'Resumo dos últimos 30 dias';
+        } else if (periodo === 'especifico') {
+          titulo.textContent = `Resumo de ${formatarDataPeriodo(dataInicioStr)} a ${formatarDataPeriodo(dataFimStr)}`;
+        } else {
+          titulo.textContent = 'Resumo de todos os períodos';
+        }
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
       }
     }
 
     function limparFiltro() {
+      document.getElementById('filtro-periodo-resumo').value = 'todos';
+      document.getElementById('campos-periodo-especifico').classList.add('hidden');
       document.getElementById('filtro-data-inicio').value = '';
       document.getElementById('filtro-data-fim').value = '';
-      carregarDados();
+      document.getElementById('filtro-data-inicio').required = false;
+      document.getElementById('filtro-data-fim').required = false;
+      void carregarDados();
     }
 
     function selecionarHistorico(tipo) {
