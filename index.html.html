@@ -3210,9 +3210,17 @@
       const porCategoria = new Map();
 
       vendas.forEach(venda => {
-        const pag = venda.pagamento || 'Outros';
-        if (!porPagamento.has(pag)) porPagamento.set(pag, { pedidos: 0, faturamento: 0, taxaMaquina: 0 });
-        const pObj = porPagamento.get(pag);
+        const formaPagamento = String(venda.pagamento || 'Outros').trim() || 'Outros';
+        const chavePagamento = formaPagamento
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/\s+/g, ' ');
+        const nomePagamento = chavePagamento === 'pix' ? 'PIX' : formaPagamento;
+        if (!porPagamento.has(chavePagamento)) {
+          porPagamento.set(chavePagamento, { nome: nomePagamento, pedidos: 0, faturamento: 0, taxaMaquina: 0 });
+        }
+        const pObj = porPagamento.get(chavePagamento);
         pObj.pedidos += 1;
         pObj.faturamento += calcularFaturamentoLiquido(venda);
         pObj.taxaMaquina += calcularTaxaMaquina(venda);
@@ -3227,9 +3235,9 @@
         catObj.total += Number(custo.valor) || 0;
       });
 
-      const linhasPagamentos = [...porPagamento.entries()].map(([pag, obj]) => `
+      const linhasPagamentos = [...porPagamento.values()].map(obj => `
         <tr>
-          <td class="p-3 text-slate-200 font-medium">${escaparHTML(pag)}</td>
+          <td class="p-3 text-slate-200 font-medium">${escaparHTML(obj.nome)}</td>
           <td class="p-3 text-right">${obj.pedidos}</td>
           <td class="p-3 text-right">${moeda(obj.faturamento)}</td>
           <td class="p-3 text-right text-rose-400">${moeda(obj.taxaMaquina)}</td>
